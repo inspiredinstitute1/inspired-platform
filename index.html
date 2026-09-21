@@ -440,15 +440,17 @@
         <div class="container">
             <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
                 <h2 style="color: var(--saffron); margin-bottom: 20px;">Interactive Assessment</h2>
-                <button class="btn-main" onclick="startTest(0)" style="max-width: 400px;">🎯 Start Latest: English Pedagogy (25 Qs)</button>
+                <button class="btn-main" onclick="startTest(0)" style="max-width: 400px;">🎯 Start Latest: Exam Questions (Pedagogy)</button>
             </div>
 
             <div style="background-color: var(--bg-card); padding: 25px; border-radius: 8px; border: 1px solid #333; max-width: 500px; margin: 0 auto; text-align: center;">
                 <h3 style="margin-bottom: 15px; color: var(--text-main);">Previous Mock Tests</h3>
                 <select class="styled-select" id="testsSelect">
-                    <option value="0">Test 1: English Pedagogy Mastery</option>
-                    <option value="1">Test 2: Basic Grammar Concepts</option>
-                    <option value="2">Test 3: English Literature Basics</option>
+                    <!-- Dropdown updated with the new test -->
+                    <option value="0">Test 1: Approaches & Methods (25 Qs)</option>
+                    <option value="1">Test 2: English Pedagogy Mastery</option>
+                    <option value="2">Test 3: Basic Grammar Concepts</option>
+                    <option value="3">Test 4: English Literature Basics</option>
                 </select>
                 <button class="btn-outline" onclick="startSelectedTest()">Begin Selected Test</button>
             </div>
@@ -541,14 +543,14 @@
     </nav>
 
     <script>
-        // --- System Data (Notes and 75 Mock Test Questions) ---
+        // --- System Data (Notes) ---
         const notesData = [
             { title: "Methods of Teaching English", content: "<h3>1. Grammar Translation Method</h3><p>Focuses on translating texts to and from the target language. Relies heavily on rote learning of vocabulary and grammar rules. Little emphasis on speaking.</p><h3>2. Direct Method</h3><p>No translation is allowed. Meaning is conveyed directly through demonstrations and visual aids. Encourages direct association between concept and English word.</p><h3>3. Communicative Language Teaching (CLT)</h3><p>Focuses on interaction and meaningful communication rather than grammatical perfection. The goal is communicative competence.</p>" },
             { title: "Language Skills (LSRW)", content: "<h3>Listening (Receptive)</h3><p>The ability to accurately receive and interpret messages in the communication process. It is a passive/receptive skill.</p><h3>Speaking (Productive)</h3><p>An interactive process of constructing meaning that involves producing and receiving information. It is an active/productive skill.</p><h3>Reading (Receptive)</h3><p>A cognitive process of decoding symbols to derive meaning. Includes skimming and scanning strategies.</p><h3>Writing (Productive)</h3><p>The physical and mental act of committing ideas to text. Requires knowledge of vocabulary, grammar, and sentence structure.</p>" },
             { title: "Tenses & Usage", content: "<h3>Simple Present</h3><p>Used for habits, general truths, and scheduled future events. E.g., The sun rises in the east.</p><h3>Present Continuous</h3><p>Used for actions happening right now or around now. E.g., I am teaching grammar today.</p><h3>Present Perfect</h3><p>Used for past actions with current relevance or experiences in one's life. E.g., I have finished my homework.</p><h3>Simple Past</h3><p>Used for completed actions at a specific time in the past. E.g., She arrived yesterday.</p>" }
         ];
 
-        // Generator for 25 questions per test
+        // Generator for previous dummy questions
         function generateTestQuestions(topic) {
             let qList = [];
             if (topic === 'pedagogy') {
@@ -576,16 +578,46 @@
                     });
                 }
             }
-            qList[0].q = "What is the primary focus of Communicative Language Teaching (CLT)?";
-            qList[0].options = ["Grammar drills", "Meaningful communication", "Memorization", "Translation"];
-            qList[0].a = 1;
             return qList;
         }
 
+        // --- System Data (Tests) ---
         const testsData = [
-            { title: "Test 1: English Pedagogy Mastery", questions: generateTestQuestions('pedagogy') },
-            { title: "Test 2: Basic Grammar Concepts", questions: generateTestQuestions('grammar') },
-            { title: "Test 3: English Literature Basics", questions: generateTestQuestions('literature') }
+            // The new manually added test
+            { 
+                title: "Test 1: Approaches & Methods (25 Qs)", 
+                questions: [
+                    { q: "The primary focus of Communicative Language Teaching (CLT) is on:", options: ["Grammatical accuracy", "Rote memorization", "Meaningful interaction", "Direct translation"], a: 2 },
+                    { q: "Which method is historically known as the Prussian Method or the Classical Method?", options: ["The Direct Method", "The Grammar-Translation Method", "The Audio-Lingual Method", "The Bilingual Method"], a: 1 },
+                    { q: "In the Direct Method, how is vocabulary primarily taught?", options: ["Through lists of translated words", "Through realia, pictures, and pantomime", "Through intense grammar drills", "Through reading classic literature"], a: 1 },
+                    { q: "The Audio-Lingual Method has its roots in which psychological theory?", options: ["Constructivism", "Cognitivism", "Behaviorism", "Humanism"], a: 2 },
+                    { q: "Which of the following is NOT a characteristic of the Grammar-Translation Method?", options: ["Classes are taught in the mother tongue.", "Much vocabulary is taught in the form of lists of isolated words.", "Elaborate explanations of the intricacies of grammar are given.", "Pronunciation receives heavy emphasis."], a: 3 },
+                    { q: "The concept of 'Language Acquisition Device' (LAD) was proposed by:", options: ["B.F. Skinner", "Noam Chomsky", "Jean Piaget", "Lev Vygotsky"], a: 1 },
+                    { q: "In which approach is the syllabus organized around functions (e.g., apologizing, requesting) rather than grammatical structures?", options: ["Structural Approach", "Situational Approach", "Communicative Approach", "Natural Approach"], a: 2 },
+                    { q: "Which method relies heavily on drills and pattern practice?", options: ["Total Physical Response", "Audio-Lingual Method", "Suggestopedia", "The Silent Way"], a: 1 },
+                    { q: "Who developed the 'Bilingual Method' of teaching English?", options: ["Dr. West", "C.J. Dodson", "H.E. Palmer", "A.S. Hornby"], a: 1 },
+                    { q: "The structural approach focuses on the mastery of:", options: ["Vocabulary", "Phonetics", "Pattern of sentences", "Translation skills"], a: 2 },
+                    { q: "According to Krashen's theory, the 'Affective Filter' relates to:", options: ["The grammatical complexity of the input", "The learner's emotional state (anxiety, motivation)", "The frequency of vocabulary used", "The method of error correction"], a: 1 },
+                    { q: "Total Physical Response (TPR), developed by James Asher, is based on:", options: ["Listening to classical music", "Translating texts silently", "Physical movement in response to verbal commands", "Group discussions and role-plays"], a: 2 },
+                    { q: "Which of the following methods uses the mother tongue, but only by the teacher to explain meanings, while students practice in the target language?", options: ["Direct Method", "Grammar-Translation Method", "Bilingual Method", "Dr. West's New Method"], a: 2 },
+                    { q: "The primary emphasis of Dr. West's New Method is on:", options: ["Writing", "Speaking", "Reading", "Listening"], a: 2 },
+                    { q: "In Communicative Language Teaching, errors are considered:", options: ["A sign of failure that must be immediately corrected", "A natural outcome of the development of communication skills", "Proof that the teacher is ineffective", "Something to be avoided at all costs through drilling"], a: 1 },
+                    { q: "Which approach advocates that language is best learned when the focus is on the meaning rather than the form?", options: ["Structural Approach", "Communicative Approach", "Audio-Lingual Method", "Grammar-Translation Method"], a: 1 },
+                    { q: "The 'Silent Way' is a methodology where:", options: ["Students are not allowed to speak for the first month.", "The teacher remains as silent as possible to encourage student production.", "Reading and writing are the only skills taught.", "All instruction is done through written signs."], a: 1 },
+                    { q: "Which method focuses on reducing the psychological barriers to learning, often using comfortable seating and background music?", options: ["Suggestopedia", "The Silent Way", "Community Language Learning", "Task-Based Language Teaching"], a: 0 },
+                    { q: "In Task-Based Language Teaching (TBLT), the lesson is centered around:", options: ["A specific grammatical rule", "A list of new vocabulary words", "The completion of a meaningful task", "Translating a passage accurately"], a: 2 },
+                    { q: "Which of the following is an authentic material in the context of CLT?", options: ["A grammar exercise book", "A textbook written specifically for ESL learners", "A railway timetable", "A list of irregular verbs"], a: 2 },
+                    { q: "What is the role of the teacher in a learner-centered communicative classroom?", options: ["An absolute authority figure", "A silent observer", "A facilitator and guide", "A strict drill master"], a: 2 },
+                    { q: "The 'Eclectic Approach' in language teaching refers to:", options: ["Strictly adhering to one specific method", "Using only traditional methods", "Combining different methods and approaches based on the learners' needs", "Teaching without any planned syllabus"], a: 2 },
+                    { q: "Inductive teaching of grammar means:", options: ["Giving rules first, then examples", "Giving examples first, and letting students discover the rules", "Avoiding the teaching of rules entirely", "Only teaching grammar through translation"], a: 1 },
+                    { q: "Which approach is based on the idea that language learning is habit formation?", options: ["Cognitive Approach", "Constructivist Approach", "Behaviorist Approach", "Humanistic Approach"], a: 2 },
+                    { q: "In the context of language teaching, what does 'L1' refer to?", options: ["The target language", "The first language or mother tongue", "Level 1 proficiency", "Language learning phase 1"], a: 1 }
+                ]
+            },
+            // The generated dummy tests
+            { title: "Test 2: English Pedagogy Mastery", questions: generateTestQuestions('pedagogy') },
+            { title: "Test 3: Basic Grammar Concepts", questions: generateTestQuestions('grammar') },
+            { title: "Test 4: English Literature Basics", questions: generateTestQuestions('literature') }
         ];
 
         // --- Theme Toggle Logic ---
