@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#121212" id="themeColorMeta">
+    
+    <!-- PWA Links -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="LOGO.jpeg">
+    
+    <title>InspirED Institute | Free English Coaching</title>
+    
+    <style>
+        :root {
+            --bg-dark: #121212;
+            --bg-card: #1e1e1e;
+            --text-main: #ffffff;
+            --text-muted: #cccccc;
+            --saffron: #FF9933;
+            --gold: #D4AF37;
+            --header-border: var(--gold);
+            --nav-bg: #1e1e1e;
+        }
+
+        body.light-mode {
+            --bg-dark: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --header-border: var(--saffron);
+            --nav-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            transition: background-color 0.3s, color 0.3s;
+            padding-bottom: 70px;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            padding: 10px 15px;
+            border-bottom: 2px solid var(--header-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: background-color 0.3s;
+        }
+
+        .logo-img { height: 45px; width: auto; display: block; cursor: pointer; }
+        .nav-right { display: flex; align-items: center; gap: 20px; }
+        .desktop-nav { display: flex; gap: 15px; }
+
+        .desktop-nav a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: color 0.3s;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .desktop-nav a:hover, .desktop-nav a.active {
+            color: var(--gold);
+            background-color: rgba(212, 175, 55, 0.1);
+        }
+        
+        body.light-mode .desktop-nav a:hover, body.light-mode .desktop-nav a.active {
+            color: var(--saffron);
+            background-color: rgba(255, 153, 51, 0.1);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover { background-color: var(--gold); color: #121212; }
+        body.light-mode .theme-toggle { border-color: var(--saffron); }
+        body.light-mode .theme-toggle:hover { background-color: var(--saffron); color: #ffffff; }
+
+        .tab-view {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .tab-view.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .container { max-width: 1000px; margin: 0 auto; padding: 20px 15px; }
+
+        .vision-section {
+            text-align: center;
+            padding: 40px 15px;
+            background: linear-gradient(to bottom, var(--bg-card), var(--bg-dark));
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid #333;
+        }
+        body.light-mode .vision-section { border-color: #ddd; }
+        .vision-section h1 { color: var(--gold); margin-bottom: 15px; font-size: 2rem; }
+        body.light-mode .vision-section h1 { color: var(--saffron); }
+        .vision-section p { font-size: 1.1rem; color: var(--text-main); max-width: 800px; margin: 0 auto 15px auto; line-height: 1.8; }
+        .vision-section .kannada-text { color: var(--saffron); font-size: 1.15rem; font-weight: bold; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            padding: 25px 20px;
+            border-radius: 8px;
+            border-top: 4px solid var(--saffron);
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            transition: transform 0.2s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card:active { transform: scale(0.98); }
+        .card h3 { color: var(--gold); margin-bottom: 10px; font-size: 1.4rem; }
+        body.light-mode .card h3 { color: var(--saffron); }
+        .card p { color: var(--text-muted); font-size: 0.95rem; margin-bottom: 15px; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 15px; }
+
+        .btn-main {
+            background-color: var(--saffron);
+            color: #121212;
+            padding: 12px 24px;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 8px;
+            display: inline-block;
+            transition: background 0.3s;
+            cursor: pointer;
+            border: none;
+            font-size: 1rem;
+            width: 100%;
+        }
+        .btn-main:hover { background-color: var(--gold); }
+
+        .btn-outline {
+            background-color: transparent;
+            color: var(--saffron);
+            padding: 12px 20px;
+            border: 2px solid var(--saffron);
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        .btn-outline:hover { background-color: var(--saffron); color: #121212; }
+
+        .styled-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            border: 1px solid var(--saffron);
+            font-size: 1rem;
+            margin-bottom: 15px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 2px solid #333;
+            background-color: #000;
+        }
+        .video-wrapper iframe {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;
+        }
+
+        .thumbnail-card {
+            background-color: var(--bg-card);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #333;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+        }
+        body.light-mode .thumbnail-card { border-color: #ddd; }
+        .thumbnail-card:hover { transform: scale(1.02); }
+        .thumb-img { width: 120px; height: 68px; object-fit: cover; }
+        .thumb-details { padding: 10px; }
+        .thumb-title { font-size: 0.95rem; font-weight: bold; color: var(--text-main); }
+        .thumb-date { font-size: 0.8rem; color: var(--saffron); }
+
+        .note-content-box {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--header-border);
+            line-height: 1.8;
+        }
+        .note-content-box h3 { color: var(--gold); margin-top: 15px; margin-bottom: 5px; }
+        body.light-mode .note-content-box h3 { color: var(--saffron); }
+        .note-content-box p { color: var(--text-main); margin-bottom: 15px; }
+
+        .test-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); padding-bottom: 15px; margin-bottom: 20px; }
+        .test-header h2 { color: var(--saffron); font-size: 1.2rem; }
+        .timer { font-size: 1.2rem; font-weight: bold; color: #ff4444; }
+        
+        .option-btn {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--text-muted);
+            padding: 15px;
+            border-radius: 5px;
+            text-align: left;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 10px;
+            width: 100%;
+        }
+        .option-btn:hover { border-color: var(--gold); }
+        .option-btn.selected { background-color: rgba(212, 175, 55, 0.2); border-color: var(--gold); font-weight: bold; color: var(--gold); }
+
+        .leaderboard-box {
+            background-color: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        body.light-mode .leaderboard-box { background-color: #f0f0f0; }
+        .lb-entry { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #444; }
+        .lb-entry:last-child { border-bottom: none; }
+        
+        .name-input-group { display: flex; flex-direction: column; gap: 10px; margin-top: 15px; }
+        .name-input { padding: 10px; border-radius: 5px; border: 1px solid var(--saffron); background: var(--bg-dark); color: var(--text-main); font-size: 1rem; width: 100%; }
+
+        footer {
+            text-align: center;
+            padding: 30px 15px 90px 15px; 
+            background-color: var(--bg-card);
+            border-top: 1px solid var(--header-border);
+            margin-top: 40px;
+            transition: background-color 0.3s;
+        }
+
+        .contact-info { font-size: 1.2rem; margin-bottom: 20px; color: var(--text-main); }
+        .contact-info span { color: var(--gold); font-weight: bold; }
+        body.light-mode .contact-info span { color: var(--saffron); }
+
+        .social-buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 15px; }
+        .social-btn {
+            display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px;
+            background-color: var(--bg-dark); border: 1px solid var(--saffron);
+            border-radius: 30px; color: var(--text-main); text-decoration: none;
+            font-weight: bold; font-size: 0.95rem; transition: all 0.3s;
+        }
+        .social-btn:hover { background-color: var(--saffron); color: #121212; }
+
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; width: 100%;
+            background-color: var(--nav-bg); border-top: 1px solid #333;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.2); z-index: 1000; padding: 10px 0;
+        }
+        body.light-mode .bottom-nav { border-top: 1px solid #ddd; }
+        .bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            text-decoration: none; color: var(--text-muted); font-size: 0.75rem;
+            transition: color 0.2s; cursor: pointer; width: 25%;
+        }
+        .nav-item.active { color: var(--gold); }
+        body.light-mode .nav-item.active { color: var(--saffron); }
+        .nav-icon { font-size: 1.4rem; margin-bottom: 4px; }
+
+        @media (max-width: 768px) {
+            .desktop-nav { display: none; }
+            .bottom-nav { display: block; }
+            body { padding-bottom: 0; }
+        }
+        @media (min-width: 769px) {
+            body { padding-bottom: 0; }
+            footer { padding-bottom: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <img src="LOGO.jpeg" alt="InspirED Logo" class="logo-img" onclick="switchTab('home')" onerror="this.src='https://placehold.co/200x55/121212/D4AF37?text=InspirED+Institute'">
+        <div class="nav-right">
+            <nav class="desktop-nav">
+                <a onclick="switchTab('home')" id="tab-link-home" class="active">Home</a>
+                <a onclick="switchTab('videos')" id="tab-link-videos">Videos</a>
+                <a onclick="switchTab('notes')" id="tab-link-notes">Notes</a>
+                <a onclick="switchTab('tests')" id="tab-link-tests">Mock Tests</a>
+            </nav>
+            <button class="theme-toggle" id="themeToggleBtn" onclick="toggleTheme()">☀️ Light</button>
+        </div>
+    </header>
+
+    <div id="view-home" class="tab-view active">
+        <div class="container">
+            <div class="vision-section">
+                <h1>Our Vision</h1>
+                <p>Welcome to <b>InspirED Institute</b>. Our mission is to empower the teachers of tomorrow. We are dedicated to providing entirely free, high-quality coaching for competitive exam aspirants by making top-tier educational resources, lessons, and mock tests accessible to everyone.</p>
+                <p class="kannada-text">ಸ್ಪರ್ಧಾತ್ಮಕ ಪರೀಕ್ಷಾ ಆಕಾಂಕ್ಷಿಗಳಿಗೆ ಸಂಪೂರ್ಣ ಉಚಿತ, ಉನ್ನತ ಗುಣಮಟ್ಟದ ತರಬೇತಿಯನ್ನು ನೀಡುವುದು ಇನ್ಸ್‌ಪೈರ್ಡ್ ಇನ್‌ಸ್ಟಿಟ್ಯೂಟ್‌ನ ಮುಖ್ಯ ಗುರಿಯಾಗಿದೆ. ನಾಳೆಯ ಶಿಕ್ಷಕರನ್ನು ಸಬಲೀಕರಣಗೊಳಿಸುವ ನಿಟ್ಟಿನಲ್ಲಿ ಉತ್ತಮ ಅಧ್ಯಯನ ಸಾಮಗ್ರಿಗಳು, ತರಗತಿಗಳು ಮತ್ತು ಅಣಕು ಪರೀಕ್ಷೆಗಳನ್ನು ಎಲ್ಲರಿಗೂ ತಲುಪಿಸುವುದು ನಮ್ಮ ಧ್ಯೇಯ.</p>
+            </div>
+
+            <h2 style="text-align: center; margin-bottom: 25px; color: var(--text-muted);">Explore Materials</h2>
+            <div class="grid">
+                <div class="card" onclick="switchTab('videos')">
+                    <div class="card-icon">📺</div>
+                    <h3>Videos</h3>
+                    <p>Watch our latest live classes and recorded sessions.</p>
+                    <button class="btn-main">Open Videos</button>
+                </div>
+                <div class="card" onclick="switchTab('notes')">
+                    <div class="card-icon">📝</div>
+                    <h3>Notes</h3>
+                    <p>Access our bilingual study materials and grammar rules.</p>
+                    <button class="btn-main">Open Notes</button>
+                </div>
+                <div class="card" onclick="switchTab('tests')">
+                    <div class="card-icon">🎯</div>
+                    <h3>Mock Tests</h3>
+                    <p>Practice with full 25-question topic-wise examinations.</p>
+                    <button class="btn-main">Open Tests</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-videos" class="tab-view">
+        <div class="container">
+            <h2 style="color: var(--saffron); margin-bottom: 15px;">Latest Video</h2>
+            
+            <div class="video-wrapper">
+                <iframe id="main-video" src="https://www.youtube.com/embed/SdFD8yuxkWQ" title="YouTube Video Player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+            
+            <h3 id="main-video-title" style="margin-bottom: 5px;">🔥 GPSTR HSTR PSTR KREIS | WHEN YOU ARE OLD -W B YEATS | COMPLETE POEM ANALYSIS</h3>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 30px;">
+                Streamed live on Sept 19, 2026 | 
+                <a id="main-video-link" href="https://www.youtube.com/watch?v=SdFD8yuxkWQ" target="_blank" style="color: var(--saffron); text-decoration: underline;">Watch directly on YouTube</a>
+            </p>
+
+            <h2 style="color: var(--saffron); margin-bottom: 15px; border-top: 1px solid #333; padding-top: 20px;">Previous Videos</h2>
+            <div class="grid" style="grid-template-columns: 1fr;">
+                
+                <div class="thumbnail-card" onclick="playVideo('HrAT9NEQ7S4', 'HSTR English | Arundhati Roy: The God of Small Things | 25 Most Important MCQs |')">
+                    <img src="https://img.youtube.com/vi/HrAT9NEQ7S4/hqdefault.jpg" alt="Thumbnail" class="thumb-img">
+                    <div class="thumb-details">
+                        <div class="thumb-title">HSTR English | Arundhati Roy: The God of Small Things | 25 Most Important MCQs |</div>
+                        <div class="thumb-date">Sept 14, 2026</div>
+                    </div>
+                </div>
+
+                <div class="thumbnail-card" onclick="playVideo('4qeWXdBg7gQ', 'GPSTR HSTR | 2026 | Common Errors & Traps | English Grammar')">
+                    <img src="https://img.youtube.com/vi/4qeWXdBg7gQ/hqdefault.jpg" alt="Thumbnail" class="thumb-img">
+                    <div class="thumb-details">
+                        <div class="thumb-title">GPSTR HSTR | 2026 | Common Errors & Traps | English Grammar</div>
+                        <div class="thumb-date">Aug 30, 2026</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div id="view-notes" class="tab-view">
+        <div class="container">
+            <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
+                <h2 style="color: var(--saffron); margin-bottom: 20px;">Study Materials</h2>
+                <button class="btn-main" onclick="openNote(0)" style="max-width: 400px;">📖 Open Latest Note: Pedagogy Basics</button>
+            </div>
+
+            <div style="background-color: var(--bg-card); padding: 25px; border-radius: 8px; border: 1px solid #333; max-width: 500px; margin: 0 auto; text-align: center;">
+                <h3 style="margin-bottom: 15px; color: var(--text-main);">Archive Notes</h3>
+                <select class="styled-select" id="notesSelect">
+                    <option value="0">1. Methods of Teaching English</option>
+                    <option value="1">2. Language Skills (LSRW)</option>
+                    <option value="2">3. Tenses & Usage Guide</option>
+                </select>
+                <button class="btn-outline" onclick="openSelectedNote()">Read Selected Note</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Tab for Reading a Note -->
+    <div id="view-note-reader" class="tab-view">
+        <div class="container">
+            <button class="btn-outline" onclick="switchTab('notes')" style="margin-bottom: 20px; width: auto;">&larr; Back to Notes List</button>
+            <h2 id="note-title" style="color: var(--gold); margin-bottom: 15px;">Note Title</h2>
+            <div id="note-body" class="note-content-box">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
+    <div id="view-tests" class="tab-view">
+        <div class="container">
+            <div style="text-align: center; margin-top: 20px; margin-bottom: 30px;">
+                <h2 style="color: var(--saffron); margin-bottom: 20px;">Interactive Assessment</h2>
+                <button class="btn-main" onclick="startTest(0)" style="max-width: 400px;">🎯 Start Latest: English Pedagogy (25 Qs)</button>
+            </div>
+
+            <div style="background-color: var(--bg-card); padding: 25px; border-radius: 8px; border: 1px solid #333; max-width: 500px; margin: 0 auto; text-align: center;">
+                <h3 style="margin-bottom: 15px; color: var(--text-main);">Previous Mock Tests</h3>
+                <select class="styled-select" id="testsSelect">
+                    <option value="0">Test 1: English Pedagogy Mastery</option>
+                    <option value="1">Test 2: Basic Grammar Concepts</option>
+                    <option value="2">Test 3: English Literature Basics</option>
+                </select>
+                <button class="btn-outline" onclick="startSelectedTest()">Begin Selected Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Tab for the Test Engine -->
+    <div id="view-test-engine" class="tab-view">
+        <div class="container" style="max-width: 700px;">
+            <div class="test-header">
+                <h2 id="engine-title">Mock Test</h2>
+                <div class="timer" id="time-display">25:00</div>
+            </div>
+
+            <h3 style="margin-bottom: 15px; font-weight: normal;">Question <span id="q-current">1</span> of 25</h3>
+            <p id="engine-q-text" style="font-size: 1.15rem; margin-bottom: 25px; line-height: 1.5; color: var(--text-main);"></p>
+
+            <div id="engine-options">
+                <!-- Options injected here -->
+            </div>
+
+            <div style="display: flex; justify-content: space-between; margin-top: 25px;">
+                <button class="btn-outline" id="btn-prev" onclick="navQuestion(-1)" style="width: 48%;">Previous</button>
+                <button class="btn-main" id="btn-next" onclick="navQuestion(1)" style="width: 48%;">Next</button>
+                <button class="btn-main" id="btn-submit-test" onclick="finishTest()" style="width: 48%; display: none; background-color: #ff4444; color: white;">Submit Test</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Tab for Test Results and Leaderboard -->
+    <div id="view-test-results" class="tab-view">
+        <div class="container" style="max-width: 600px; text-align: center;">
+            <h2 style="color: var(--saffron); font-size: 2rem;">Test Complete!</h2>
+            <p style="font-size: 1.2rem; margin-top: 10px;">Your Score: <span id="final-score" style="color: var(--gold); font-size: 2.5rem; font-weight: bold;">0</span> / 25</p>
+
+            <div class="leaderboard-box" id="leaderboard-entry-box">
+                <h3 style="color: var(--saffron); margin-bottom: 10px;">Join the Leaderboard</h3>
+                <p style="font-size: 0.9rem; margin-bottom: 15px;">Save your score to see how you rank among other aspirants.</p>
+                
+                <div class="name-input-group">
+                    <input type="text" id="player-name" class="name-input" placeholder="Enter your name (e.g., Ramesh H.)">
+                    <input type="text" id="player-place" class="name-input" placeholder="Enter your place (e.g., Bagalkot)">
+                    <button class="btn-main" style="width: 100%; margin-top: 10px;" onclick="saveToLeaderboard()">Save Score</button>
+                </div>
+            </div>
+
+            <div class="leaderboard-box" id="leaderboard-display-box" style="display: none;">
+                <h3 style="color: var(--gold); margin-bottom: 15px;">Top Performers</h3>
+                <div id="lb-list">
+                    <!-- Leaderboard entries go here -->
+                </div>
+            </div>
+
+            <button class="btn-outline" onclick="switchTab('tests')" style="margin-top: 30px;">Return to Tests Menu</button>
+        </div>
+    </div>
+
+    <footer>
+        <div class="contact-info" style="line-height: 1.8;">
+            Helpline: <span>9110244498</span><br>
+            <span style="font-size: 1rem;">Email: <a href="mailto:inspired.iice@gmail.com" style="color: inherit; text-decoration: none;">inspired.iice@gmail.com</a></span>
+        </div>
+        
+        <p style="color: var(--text-muted); margin-bottom: 10px;">Join our community for daily updates:</p>
+        
+        <div class="social-buttons">
+            <a href="https://chat.whatsapp.com/Hb8F6VqeCzE4ULlcMACvRr" target="_blank" class="social-btn">💬 WhatsApp</a>
+            <a href="https://t.me/+dtX0f0GSIBA4YWY1" target="_blank" class="social-btn">✈️ Telegram</a>
+            <a href="https://youtube.com/@Inspiredinstitute1" target="_blank" class="social-btn">📺 YouTube</a>
+        </div>
+        
+        <p style="margin-top: 30px; font-size: 0.8rem; color: #777;">&copy; 2026 InspirED Institute. All Rights Reserved.</p>
+    </footer>
+
+    <nav class="bottom-nav" id="mobile-nav">
+        <div class="bottom-nav-inner">
+            <a onclick="switchTab('home')" class="nav-item active" id="mob-link-home">
+                <span class="nav-icon">🏠</span><span>Home</span>
+            </a>
+            <a onclick="switchTab('videos')" class="nav-item" id="mob-link-videos">
+                <span class="nav-icon">📺</span><span>Videos</span>
+            </a>
+            <a onclick="switchTab('notes')" class="nav-item" id="mob-link-notes">
+                <span class="nav-icon">📝</span><span>Notes</span>
+            </a>
+            <a onclick="switchTab('tests')" class="nav-item" id="mob-link-tests">
+                <span class="nav-icon">🎯</span><span>Tests</span>
+            </a>
+        </div>
+    </nav>
+
+    <script>
+        // --- System Data (Notes and 75 Mock Test Questions) ---
+        const notesData = [
+            { title: "Methods of Teaching English", content: "<h3>1. Grammar Translation Method</h3><p>Focuses on translating texts to and from the target language. Relies heavily on rote learning of vocabulary and grammar rules. Little emphasis on speaking.</p><h3>2. Direct Method</h3><p>No translation is allowed. Meaning is conveyed directly through demonstrations and visual aids. Encourages direct association between concept and English word.</p><h3>3. Communicative Language Teaching (CLT)</h3><p>Focuses on interaction and meaningful communication rather than grammatical perfection. The goal is communicative competence.</p>" },
+            { title: "Language Skills (LSRW)", content: "<h3>Listening (Receptive)</h3><p>The ability to accurately receive and interpret messages in the communication process. It is a passive/receptive skill.</p><h3>Speaking (Productive)</h3><p>An interactive process of constructing meaning that involves producing and receiving information. It is an active/productive skill.</p><h3>Reading (Receptive)</h3><p>A cognitive process of decoding symbols to derive meaning. Includes skimming and scanning strategies.</p><h3>Writing (Productive)</h3><p>The physical and mental act of committing ideas to text. Requires knowledge of vocabulary, grammar, and sentence structure.</p>" },
+            { title: "Tenses & Usage", content: "<h3>Simple Present</h3><p>Used for habits, general truths, and scheduled future events. E.g., The sun rises in the east.</p><h3>Present Continuous</h3><p>Used for actions happening right now or around now. E.g., I am teaching grammar today.</p><h3>Present Perfect</h3><p>Used for past actions with current relevance or experiences in one's life. E.g., I have finished my homework.</p><h3>Simple Past</h3><p>Used for completed actions at a specific time in the past. E.g., She arrived yesterday.</p>" }
+        ];
+
+        // Generator for 25 questions per test
+        function generateTestQuestions(topic) {
+            let qList = [];
+            if (topic === 'pedagogy') {
+                for(let i=1; i<=25; i++) {
+                    qList.push({
+                        q: `Pedagogy Question ${i}: Which method strictly avoids the use of the mother tongue?`,
+                        options: ["Grammar Translation", "Direct Method", "Bilingual Method", "Audio-Lingual"],
+                        a: 1
+                    });
+                }
+            } else if (topic === 'grammar') {
+                for(let i=1; i<=25; i++) {
+                    qList.push({
+                        q: `Grammar Question ${i}: Identify the correct tense - "He has been reading since morning."`,
+                        options: ["Present Perfect", "Present Perfect Continuous", "Past Perfect Continuous", "Simple Past"],
+                        a: 1
+                    });
+                }
+            } else {
+                for(let i=1; i<=25; i++) {
+                    qList.push({
+                        q: `Literature Question ${i}: Who is the author of "The God of Small Things"?`,
+                        options: ["Salman Rushdie", "Arundhati Roy", "R.K. Narayan", "Anita Desai"],
+                        a: 1
+                    });
+                }
+            }
+            qList[0].q = "What is the primary focus of Communicative Language Teaching (CLT)?";
+            qList[0].options = ["Grammar drills", "Meaningful communication", "Memorization", "Translation"];
+            qList[0].a = 1;
+            return qList;
+        }
+
+        const testsData = [
+            { title: "Test 1: English Pedagogy Mastery", questions: generateTestQuestions('pedagogy') },
+            { title: "Test 2: Basic Grammar Concepts", questions: generateTestQuestions('grammar') },
+            { title: "Test 3: English Literature Basics", questions: generateTestQuestions('literature') }
+        ];
+
+        // --- Theme Toggle Logic ---
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeToggleBtn');
+            const themeMeta = document.getElementById('themeColorMeta');
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                btn.innerHTML = '🌙 Dark';
+                themeMeta.setAttribute('content', '#f8f9fa'); 
+            } else {
+                btn.innerHTML = '☀️ Light';
+                themeMeta.setAttribute('content', '#121212'); 
+            }
+        }
+
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            clearInterval(testTimer);
+
+            const views = document.querySelectorAll('.tab-view');
+            views.forEach(view => view.classList.remove('active'));
+
+            const desktopLinks = document.querySelectorAll('.desktop-nav a');
+            const mobileLinks = document.querySelectorAll('.nav-item');
+            desktopLinks.forEach(link => link.classList.remove('active'));
+            mobileLinks.forEach(link => link.classList.remove('active'));
+
+            document.getElementById('view-' + tabId).classList.add('active');
+
+            if(['home', 'videos', 'notes', 'tests'].includes(tabId)) {
+                document.getElementById('tab-link-' + tabId).classList.add('active');
+                document.getElementById('mob-link-' + tabId).classList.add('active');
+            }
+
+            window.scrollTo(0,0);
+        }
+
+        // --- Video Logic ---
+        function playVideo(id, title) {
+            document.getElementById('main-video').src = `https://www.youtube.com/embed/${id}?autoplay=1`;
+            document.getElementById('main-video-title').innerText = title;
+            document.getElementById('main-video-link').href = `https://www.youtube.com/watch?v=${id}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // --- Notes Logic ---
+        function openNote(index) {
+            const note = notesData[index];
+            document.getElementById('note-title').innerText = note.title;
+            document.getElementById('note-body').innerHTML = note.content;
+            switchTab('note-reader');
+        }
+
+        function openSelectedNote() {
+            const val = document.getElementById('notesSelect').value;
+            openNote(parseInt(val));
+        }
+
+        // --- Mock Test Engine Logic ---
+        let currentTestId = 0;
+        let currentQIndex = 0;
+        let testTimer = null;
+        let timeLeft = 1500; 
+        let userAnswers = [];
+
+        function startTest(index) {
+            currentTestId = index;
+            currentQIndex = 0;
+            userAnswers = new Array(25).fill(null);
+            timeLeft = 1500;
+            
+            document.getElementById('engine-title').innerText = testsData[index].title;
+            renderQuestion();
+            
+            clearInterval(testTimer);
+            testTimer = setInterval(() => {
+                if(timeLeft <= 0) { finishTest(); return; }
+                timeLeft--;
+                let m = Math.floor(timeLeft / 60);
+                let s = timeLeft % 60;
+                document.getElementById('time-display').innerText = `${m}:${s < 10 ? '0'+s : s}`;
+            }, 1000);
+
+            switchTab('test-engine');
+        }
+
+        function startSelectedTest() {
+            const val = document.getElementById('testsSelect').value;
+            startTest(parseInt(val));
+        }
+
+        function renderQuestion() {
+            const test = testsData[currentTestId];
+            const qData = test.questions[currentQIndex];
+            
+            document.getElementById('q-current').innerText = currentQIndex + 1;
+            document.getElementById('engine-q-text').innerText = qData.q;
+            
+            const optContainer = document.getElementById('engine-options');
+            optContainer.innerHTML = "";
+            
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement("button");
+                btn.className = "option-btn";
+                btn.innerText = `${String.fromCharCode(65 + idx)}. ${opt}`;
+                if(userAnswers[currentQIndex] === idx) btn.classList.add("selected");
+                btn.onclick = () => selectOption(idx);
+                optContainer.appendChild(btn);
+            });
+
+            document.getElementById('btn-prev').style.display = currentQIndex === 0 ? "none" : "block";
+            
+            if(currentQIndex === 24) {
+                document.getElementById('btn-next').style.display = "none";
+                document.getElementById('btn-submit-test').style.display = "block";
+            } else {
+                document.getElementById('btn-next').style.display = "block";
+                document.getElementById('btn-submit-test').style.display = "none";
+            }
+        }
+
+        function selectOption(idx) {
+            userAnswers[currentQIndex] = idx;
+            renderQuestion(); 
+        }
+
+        function navQuestion(dir) {
+            currentQIndex += dir;
+            renderQuestion();
+        }
+
+        function finishTest() {
+            clearInterval(testTimer);
+            let score = 0;
+            const test = testsData[currentTestId];
+            
+            userAnswers.forEach((ans, idx) => {
+                if(ans === test.questions[idx].a) score++;
+            });
+
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('leaderboard-entry-box').style.display = "block";
+            document.getElementById('leaderboard-display-box').style.display = "none";
+            
+            document.getElementById('player-name').value = "";
+            document.getElementById('player-place').value = "";
+            
+            switchTab('test-results');
+        }
+
+        // --- Leaderboard Logic ---
+        function saveToLeaderboard() {
+            let name = document.getElementById('player-name').value.trim();
+            let place = document.getElementById('player-place').value.trim();
+            
+            if(!name) name = "Aspirant";
+            if(!place) place = "Karnataka";
+            
+            let displayName = `${name} - ${place}`;
+            let score = parseInt(document.getElementById('final-score').innerText);
+            let lbKey = "inspirED_LB_Test_" + currentTestId;
+            
+            let lbData = JSON.parse(localStorage.getItem(lbKey)) || [
+                { name: "Sowmya H. - Bengaluru", score: 23 },
+                { name: "Kiran Kumar - Dharwad", score: 21 },
+                { name: "Anjali B. - Mysuru", score: 19 }
+            ];
+            
+            lbData.push({ name: displayName, score: score });
+            lbData.sort((a,b) => b.score - a.score);
+            
+            localStorage.setItem(lbKey, JSON.stringify(lbData));
+            
+            const listEl = document.getElementById('lb-list');
+            listEl.innerHTML = "";
+            lbData.slice(0, 5).forEach((entry, idx) => {
+                let html = `<div class="lb-entry">
+                    <span><b>${idx+1}.</b> ${entry.name}</span>
+                    <span style="color: var(--gold); font-weight: bold;">${entry.score} / 25</span>
+                </div>`;
+                listEl.innerHTML += html;
+            });
+
+            document.getElementById('leaderboard-entry-box').style.display = "none";
+            document.getElementById('leaderboard-display-box').style.display = "block";
+        }
+
+        // --- PWA Service Worker Registration ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('Service Worker registered successfully.', reg))
+                .catch(err => console.error('Service Worker registration failed.', err));
+            });
+        }
+    </script>
+</body>
+</html>
