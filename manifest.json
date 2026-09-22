@@ -1,11 +1,11 @@
 {
 "name": "InspirED Institute",
 "short_name": "InspirED",
-"description": "Free English coaching for competitive exam aspirants.",
+"description": "Empowering ಕನ್ನಡಿಗ Through English",
 "start_url": "./index.html",
 "display": "standalone",
-"background_color": "#121212",
-"theme_color": "#FF9933",
+"background_color": "#070B14",
+"theme_color": "#fbbf24",
 "icons": [
 {
 "src": "LOGO.jpeg",
