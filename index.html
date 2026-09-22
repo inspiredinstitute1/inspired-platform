@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#0B0F19" id="themeColorMeta">
+    <meta name="theme-color" content="#070B14" id="themeColorMeta">
     
     <!-- PWA Links -->
     <link rel="manifest" href="manifest.json">
@@ -24,10 +24,11 @@
             --bg-elevated: rgba(30, 36, 56, 0.8);
             --text-main: #f8f8f2;
             --text-muted: #94a3b8;
-            --primary: #fbbf24; 
+            --primary: #fbbf24; /* Professional Amber/Yellow */
             --primary-hover: #fcd34d;
             --accent: #8b5cf6; 
             --danger: #ef4444; 
+            --success: #10b981;
             --border-color: rgba(255, 255, 255, 0.08);
             --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.3);
             --header-bg: rgba(7, 11, 20, 0.85);
@@ -41,109 +42,89 @@
             --bg-elevated: rgba(255, 255, 255, 0.95);
             --text-main: #0f172a;
             --text-muted: #475569;
-            --primary: #d97706; 
+            --primary: #d97706; /* Darker amber for light mode contrast */
             --primary-hover: #b45309;
             --accent: #7c3aed; 
             --danger: #dc2626;
+            --success: #059669;
             --border-color: rgba(0, 0, 0, 0.06);
             --shadow-soft: 0 8px 25px rgba(0, 0, 0, 0.04);
             --header-bg: rgba(244, 246, 249, 0.9);
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background-color: var(--bg-base);
-            color: var(--text-main);
-            line-height: 1.5;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--bg-base); color: var(--text-main);
+            line-height: 1.5; transition: background-color 0.3s ease, color 0.3s ease;
             padding-bottom: 85px; /* Safely clears mobile nav */
         }
 
-        h1, h2, h3, h4, .brand-name {
-            font-family: 'Nunito', sans-serif;
-        }
+        h1, h2, h3, h4, .brand-name { font-family: 'Nunito', sans-serif; }
 
         /* Glassmorphism Utilities */
         .glass-card {
             background: var(--bg-surface);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: var(--card-radius);
-            box-shadow: var(--shadow-soft);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border-radius: var(--card-radius); box-shadow: var(--shadow-soft);
             border: 1px solid var(--border-color);
             transition: transform 0.2s ease, border-color 0.3s ease;
         }
 
         /* Header */
         header {
-            background: var(--header-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
+            background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            padding: 12px 16px; border-bottom: 1px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
         }
 
-        .brand-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            text-decoration: none;
-            cursor: pointer;
-        }
-
+        .brand-container { display: flex; align-items: center; gap: 12px; text-decoration: none; cursor: pointer; }
         .logo-img { height: 38px; width: 38px; border-radius: 10px; object-fit: cover; }
         .brand-name { font-weight: 800; font-size: 1.25rem; color: var(--text-main); letter-spacing: -0.5px; }
 
         .nav-right { display: flex; align-items: center; gap: 10px; }
 
         .btn-login {
-            background-color: rgba(245, 158, 11, 0.1);
-            color: var(--primary);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-weight: 600; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 6px;
-            cursor: pointer;
+            background-color: rgba(245, 158, 11, 0.1); color: var(--primary);
+            border: 1px solid rgba(245, 158, 11, 0.2); padding: 8px 16px;
+            border-radius: 12px; font-weight: 600; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
         }
         
         .icon-btn {
-            background: var(--bg-elevated);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            width: 40px; height: 40px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer;
+            background: var(--bg-elevated); border: 1px solid var(--border-color);
+            color: var(--text-main); width: 40px; height: 40px;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
         .icon-btn svg { width: 20px; height: 20px; fill: currentColor; }
 
         .container { max-width: 800px; margin: 0 auto; padding: 20px 16px; }
         .home-wrapper { display: flex; flex-direction: column; gap: 24px; }
         .section-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 16px; color: var(--text-main); }
+        .page-title { font-size: 1.5rem; font-weight: 900; margin-bottom: 8px; color: var(--text-main); }
+        .page-subtitle { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 24px; font-weight: 500;}
+
+        /* Buttons */
+        .btn-main {
+            background-color: var(--primary); color: #000; padding: 14px 20px;
+            font-weight: 700; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;
+            gap: 8px; border: none; font-size: 1rem; width: 100%; cursor: pointer; transition: 0.2s;
+        }
+        .btn-main:active { transform: scale(0.98); }
+        .btn-outline {
+            background-color: transparent; color: var(--text-main); border: 1px solid var(--border-color);
+            padding: 14px 20px; font-weight: 600; border-radius: 14px; display: inline-flex; 
+            align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;
+        }
+        .btn-small { padding: 8px 16px; font-size: 0.85rem; border-radius: 10px; width: auto; }
 
         /* Hero Banner */
         .hero-banner {
             background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-            border-radius: var(--card-radius);
-            padding: 28px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
+            border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--card-radius);
+            padding: 28px 20px; text-align: center; position: relative; overflow: hidden;
         }
         .hero-banner h1 { font-size: 1.5rem; font-weight: 900; line-height: 1.25; margin-bottom: 12px; color: var(--text-main); }
         .hero-banner p { font-size: 0.9rem; color: var(--text-muted); font-weight: 500; margin-bottom: 8px; }
@@ -151,17 +132,6 @@
         
         .hero-buttons { display: flex; flex-direction: column; gap: 12px; }
         @media(min-width: 600px) { .hero-buttons { flex-direction: row; justify-content: center; } .hero-buttons button { width: auto; padding: 12px 28px; } }
-
-        .btn-main {
-            background-color: var(--primary); color: #ffffff; padding: 14px 20px;
-            font-weight: 600; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;
-            gap: 8px; border: none; font-size: 1rem; width: 100%; cursor: pointer;
-        }
-        .btn-outline {
-            background-color: transparent; color: var(--text-main); border: 1px solid var(--border-color);
-            padding: 14px 20px; font-weight: 600; border-radius: 14px; display: inline-flex; 
-            align-items: center; justify-content: center; gap: 8px; width: 100%; cursor: pointer;
-        }
 
         /* Live Today */
         .live-card { padding: 16px 20px; border-left: 4px solid var(--danger); display: flex; justify-content: space-between; align-items: center; }
@@ -179,15 +149,14 @@
         .action-tile { display: flex; align-items: center; padding: 20px; cursor: pointer; text-decoration: none; color: inherit; }
         .action-tile:active { transform: scale(0.98); }
         .tile-icon {
-            width: 54px; height: 54px; border-radius: 16px;
-            display: flex; align-items: center; justify-content: center;
+            width: 54px; height: 54px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
             margin-right: 16px; flex-shrink: 0;
         }
         .icon-yellow { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
         .icon-purple { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
         .icon-red { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .icon-green { background: rgba(16, 185, 129, 0.15); color: #10b981; }
         .tile-icon svg { width: 28px; height: 28px; fill: currentColor; }
-        
         .tile-text h3 { font-size: 1.15rem; font-weight: 800; margin-bottom: 4px; }
         .tile-text p { color: var(--text-muted); font-size: 0.85rem; font-weight: 500; }
 
@@ -198,30 +167,66 @@
         }
         .scroll-row::-webkit-scrollbar { display: none; }
         
-        .exam-card {
-            flex: 0 0 auto; width: 130px; padding: 16px; text-align: center;
-            scroll-snap-align: start; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px;
-        }
+        .exam-card { flex: 0 0 auto; width: 130px; padding: 16px; text-align: center; scroll-snap-align: start; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 6px; }
         .exam-abbr { font-size: 1.1rem; font-weight: 800; }
         .exam-full { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
 
-        /* Latest Content Cards */
-        .content-card {
-            flex: 0 0 auto; width: 260px; scroll-snap-align: start; cursor: pointer;
-            overflow: hidden; display: flex; flex-direction: column;
-        }
+        .content-card { flex: 0 0 auto; width: 260px; scroll-snap-align: start; cursor: pointer; overflow: hidden; display: flex; flex-direction: column; }
         .content-thumb { height: 120px; background: var(--bg-elevated); position: relative; display: flex; align-items: center; justify-content: center; color: var(--text-muted); }
         .content-badge { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 4px 8px; border-radius: 6px; }
         .content-info { padding: 16px; }
         .content-info h4 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .content-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
 
-        /* Chips */
+        /* Chips / Categories */
         .chip-container { display: flex; flex-wrap: wrap; gap: 10px; }
         .chip {
             padding: 8px 16px; background: var(--bg-surface); border: 1px solid var(--border-color);
             border-radius: 20px; font-size: 0.85rem; color: var(--text-main); cursor: pointer; font-weight: 500;
         }
+        .chip.active { background: var(--primary); color: #000; font-weight: 700; border-color: var(--primary); }
+
+        /* --- NEW: Inner Tab Layouts (Videos, Notes, Tests) --- */
+        
+        /* Video Grid */
+        .video-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
+        @media (min-width: 600px) { .video-grid { grid-template-columns: repeat(2, 1fr); } }
+        .vid-card { overflow: hidden; cursor: pointer; transition: transform 0.2s; }
+        .vid-card:active { transform: scale(0.98); }
+        .vid-thumbnail { 
+            height: 180px; background-color: var(--bg-elevated); position: relative; 
+            display: flex; align-items: center; justify-content: center;
+            background-image: linear-gradient(45deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1));
+        }
+        .play-btn-overlay { 
+            width: 50px; height: 50px; background: var(--primary); border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; color: #000; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        .vid-duration { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600;}
+        .vid-details { padding: 16px; }
+        .vid-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
+        .vid-meta { display: flex; gap: 12px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Notes List */
+        .notes-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+        .note-item { display: flex; align-items: center; padding: 16px; gap: 16px; }
+        .note-icon-box { 
+            width: 48px; height: 48px; background: rgba(139, 92, 246, 0.15); color: var(--accent); 
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .note-content { flex: 1; }
+        .note-content h4 { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+        .note-content p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        
+        /* Test Grid */
+        .test-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
+        @media (min-width: 600px) { .test-grid { grid-template-columns: repeat(2, 1fr); } }
+        .test-card-ui { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+        .test-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .test-title { font-size: 1.1rem; font-weight: 800; line-height: 1.3; }
+        .test-badge { background: rgba(239, 68, 68, 0.15); color: var(--danger); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; white-space: nowrap; margin-left: 10px;}
+        .test-stats { display: flex; gap: 16px; font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .stat-item { display: flex; align-items: center; gap: 4px; }
 
         /* Footer & Social */
         .footer { text-align: center; padding: 30px 15px 40px; margin-top: 20px; border-top: 1px solid var(--border-color); }
@@ -234,19 +239,14 @@
         }
         .social-btn:active { transform: scale(0.95); }
         .social-btn svg { width: 22px; height: 22px; fill: currentColor; }
-        /* Brand Colors for Icons */
-        .youtube { color: #ff0000; }
-        .telegram { color: #0088cc; }
-        .whatsapp { color: #25D366; }
-        .instagram { color: #E1306C; }
+        .youtube { color: #ff0000; } .telegram { color: #0088cc; } .whatsapp { color: #25D366; } .instagram { color: #E1306C; }
 
         /* Bottom Nav */
         .bottom-nav {
             display: flex; position: fixed; bottom: 0; left: 0; width: 100%; height: 70px;
             background: var(--header-bg); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
             border-top: 1px solid var(--border-color); z-index: 1000;
-            padding-bottom: env(safe-area-inset-bottom, 0px);
-            justify-content: space-around; align-items: center;
+            padding-bottom: env(safe-area-inset-bottom, 0px); justify-content: space-around; align-items: center;
         }
         .nav-item {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -256,17 +256,16 @@
         .nav-item.active { color: var(--primary); font-weight: 700; }
         .nav-icon { width: 24px; height: 24px; fill: currentColor; }
 
+        /* Utilities */
         .tab-view { display: none; }
         .tab-view.active { display: block; animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
-        @keyframes blink-attract {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.03); }
-        }
-        .blink-free { color: #10b981; animation: blink-attract 1.5s infinite; display: inline-block; font-weight: 900; }
+        @keyframes blink-attract { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.03); } }
+        .blink-free { color: var(--success); animation: blink-attract 1.5s infinite; display: inline-block; font-weight: 900; }
         .blink-live { color: var(--danger); animation: blink-attract 1.5s infinite; display: inline-block; font-weight: 900; }
         
+        /* Auth forms */
         .auth-tabs { display: flex; margin-bottom: 24px; background: rgba(0,0,0,0.1); border-radius: 12px; padding: 4px; border: 1px solid var(--border-color); }
         .auth-tab { flex: 1; padding: 10px; border: none; background: transparent; color: var(--text-muted); font-weight: 700; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
         .auth-tab.active { background: var(--bg-surface); color: var(--text-main); box-shadow: var(--shadow-soft); }
@@ -275,7 +274,6 @@
         .styled-input { width: 100%; padding: 15px; border-radius: 12px; background: var(--bg-elevated); color: var(--text-main); border: 1px solid var(--border-color); outline: none; font-family: 'Inter', sans-serif; font-size: 0.95rem; }
         .styled-input:focus { border-color: var(--primary); }
         
-        /* Desktop specific tweaks */
         @media (min-width: 1024px) {
             .bottom-nav { display: none; }
             body { padding-bottom: 0; }
@@ -302,16 +300,14 @@
                 <span>Login</span>
             </div>
             <button class="icon-btn" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle Theme">
-                <!-- Moon Icon for Default Dark Mode -->
                 <svg viewBox="0 0 24 24" id="themeIcon"><path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-2.98 0-5.4-2.42-5.4-5.4 0-1.81.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/></svg>
             </button>
         </div>
     </header>
 
-    <!-- Main Content -->
+    <!-- Main Content: Home -->
     <div id="view-home" class="tab-view active">
         <div class="container home-wrapper">
-            
             <!-- Hero Banner -->
             <div class="hero-banner">
                 <h1>Karnataka Teacher Recruitment Preparation</h1>
@@ -320,7 +316,7 @@
                 <div class="hero-buttons">
                     <button class="btn-main" onclick="switchTab('videos')">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                        Start Learning <span class="blink-free" style="color: white; margin-left: 4px;">Free</span>
+                        Start Learning <span class="blink-free" style="color: #000; margin-left: 4px;">Free</span>
                     </button>
                     <button class="btn-outline" onclick="switchTab('videos')">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" class="blink-live"><circle cx="12" cy="12" r="8"/></svg>
@@ -342,29 +338,21 @@
             <!-- 3 Main Action Cards -->
             <div class="action-grid">
                 <div class="glass-card action-tile" onclick="switchTab('videos')">
-                    <div class="tile-icon icon-yellow">
-                        <svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg>
-                    </div>
+                    <div class="tile-icon icon-yellow"><svg viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg></div>
                     <div class="tile-text">
                         <h3>Video Classes</h3>
                         <p>Live Classes • Recorded • Topic Series</p>
                     </div>
                 </div>
-                
                 <div class="glass-card action-tile" onclick="switchTab('notes')">
-                    <div class="tile-icon icon-purple">
-                        <svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                    </div>
+                    <div class="tile-icon icon-purple"><svg viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
                     <div class="tile-text">
                         <h3>Study Notes</h3>
                         <p>Grammar • Vocab • Pedagogy • Lit</p>
                     </div>
                 </div>
-                
                 <div class="glass-card action-tile" onclick="switchTab('tests')">
-                    <div class="tile-icon icon-red">
-                        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-                    </div>
+                    <div class="tile-icon icon-red"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg></div>
                     <div class="tile-text">
                         <h3>Mock Tests & PYQs</h3>
                         <p>Practice • Timer • Score • Solutions</p>
@@ -376,82 +364,12 @@
             <div>
                 <h2 class="section-title">Prepare for Your Exam</h2>
                 <div class="scroll-row">
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">HSTR</span>
-                        <span class="exam-full">High School</span>
-                    </div>
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">GPSTR</span>
-                        <span class="exam-full">Graduate Primary</span>
-                    </div>
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">PST</span>
-                        <span class="exam-full">Primary School</span>
-                    </div>
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">KREIS</span>
-                        <span class="exam-full">Residential</span>
-                    </div>
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">KARTET</span>
-                        <span class="exam-full">Eligibility Test</span>
-                    </div>
-                    <div class="glass-card exam-card">
-                        <span class="exam-abbr">CTET</span>
-                        <span class="exam-full">Central TET</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Latest Content -->
-            <div>
-                <h2 class="section-title">Latest Content</h2>
-                <div class="scroll-row">
-                    <div class="glass-card content-card" onclick="switchTab('videos')">
-                        <div class="content-thumb">
-                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
-                            <span class="content-badge">Video</span>
-                        </div>
-                        <div class="content-info">
-                            <h4>Idioms & Phrases — PYQs</h4>
-                            <div class="content-meta"><span>GPSTR / HSTR</span><span>24 mins</span></div>
-                        </div>
-                    </div>
-                    <div class="glass-card content-card" onclick="switchTab('tests')">
-                        <div class="content-thumb">
-                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-                            <span class="content-badge" style="background: rgba(239, 68, 68, 0.8);">Mock Test</span>
-                        </div>
-                        <div class="content-info">
-                            <h4>Approaches & Methods of ELT</h4>
-                            <div class="content-meta"><span>Pedagogy</span><span>25 Qs</span></div>
-                        </div>
-                    </div>
-                    <div class="glass-card content-card" onclick="switchTab('notes')">
-                        <div class="content-thumb">
-                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-                            <span class="content-badge" style="background: rgba(139, 92, 246, 0.8);">Notes</span>
-                        </div>
-                        <div class="content-info">
-                            <h4>Literary Forms & Terms</h4>
-                            <div class="content-meta"><span>Literature</span><span>Read</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Popular Topics -->
-            <div>
-                <h2 class="section-title">Popular Topics</h2>
-                <div class="chip-container">
-                    <span class="chip">Grammar</span>
-                    <span class="chip">Vocabulary</span>
-                    <span class="chip">Pedagogy</span>
-                    <span class="chip">Literature</span>
-                    <span class="chip">PYQs</span>
-                    <span class="chip">Mock Tests</span>
-                    <span class="chip">Phonology</span>
-                    <span class="chip">Reading Comprehension</span>
+                    <div class="glass-card exam-card"><span class="exam-abbr">HSTR</span><span class="exam-full">High School</span></div>
+                    <div class="glass-card exam-card"><span class="exam-abbr">GPSTR</span><span class="exam-full">Graduate Primary</span></div>
+                    <div class="glass-card exam-card"><span class="exam-abbr">PST</span><span class="exam-full">Primary School</span></div>
+                    <div class="glass-card exam-card"><span class="exam-abbr">KREIS</span><span class="exam-full">Residential</span></div>
+                    <div class="glass-card exam-card"><span class="exam-abbr">KARTET</span><span class="exam-full">Eligibility Test</span></div>
+                    <div class="glass-card exam-card"><span class="exam-abbr">CTET</span><span class="exam-full">Central TET</span></div>
                 </div>
             </div>
 
@@ -459,48 +377,165 @@
             <footer class="footer">
                 <p>Join our community of future teachers.</p>
                 <div class="social-links">
-                    <!-- YouTube -->
-                    <a href="#" class="social-btn youtube" aria-label="YouTube">
-                        <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
-                    </a>
-                    <!-- Telegram -->
-                    <a href="#" class="social-btn telegram" aria-label="Telegram">
-                        <svg viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.686c.223-.195-.054-.285-.346-.094l-6.4 4.01-2.76-.874c-.598-.188-.61-.594.126-.882l10.814-4.17c.5-.18.966.108.82.918z"/></svg>
-                    </a>
-                    <!-- WhatsApp -->
-                    <a href="#" class="social-btn whatsapp" aria-label="WhatsApp">
-                        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-                    </a>
-                    <!-- Instagram -->
-                    <a href="#" class="social-btn instagram" aria-label="Instagram">
-                        <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-                    </a>
+                    <a href="#" class="social-btn youtube" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg></a>
+                    <a href="#" class="social-btn telegram" aria-label="Telegram"><svg viewBox="0 0 24 24"><path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.223-.548.223l.188-2.85 5.18-4.686c.223-.195-.054-.285-.346-.094l-6.4 4.01-2.76-.874c-.598-.188-.61-.594.126-.882l10.814-4.17c.5-.18.966.108.82.918z"/></svg></a>
+                    <a href="#" class="social-btn whatsapp" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></a>
                 </div>
             </footer>
         </div>
     </div>
 
-    <!-- Login View (Placeholder) -->
+    <!-- NEW: Videos View -->
+    <div id="view-videos" class="tab-view">
+        <div class="container">
+            <h2 class="page-title">Video Library</h2>
+            <p class="page-subtitle">Access your free daily classes and past series.</p>
+            
+            <div class="chip-container" style="margin-bottom: 20px;">
+                <span class="chip active">All Videos</span>
+                <span class="chip">Grammar</span>
+                <span class="chip">Pedagogy</span>
+                <span class="chip">Literature</span>
+                <span class="chip">PYQs</span>
+            </div>
+
+            <div class="video-grid">
+                <!-- Video 1 -->
+                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
+                    <div class="vid-thumbnail">
+                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+                        <span class="vid-duration">45:20</span>
+                    </div>
+                    <div class="vid-details">
+                        <h4 class="vid-title">Idioms & Phrases — Top 50 PYQs for GPSTR</h4>
+                        <div class="vid-meta"><span>Grammar / Vocab</span><span>•</span><span>2 days ago</span></div>
+                    </div>
+                </div>
+                <!-- Video 2 -->
+                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
+                    <div class="vid-thumbnail">
+                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+                        <span class="vid-duration">38:15</span>
+                    </div>
+                    <div class="vid-details">
+                        <h4 class="vid-title">Approaches and Methods of ELT Explained</h4>
+                        <div class="vid-meta"><span>Pedagogy</span><span>•</span><span>1 week ago</span></div>
+                    </div>
+                </div>
+                <!-- Video 3 -->
+                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
+                    <div class="vid-thumbnail">
+                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
+                        <span class="vid-duration">55:00</span>
+                    </div>
+                    <div class="vid-details">
+                        <h4 class="vid-title">Subject-Verb Agreement Rules Masterclass</h4>
+                        <div class="vid-meta"><span>Grammar</span><span>•</span><span>2 weeks ago</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Notes View -->
+    <div id="view-notes" class="tab-view">
+        <div class="container">
+            <h2 class="page-title">Study Notes Hub</h2>
+            <p class="page-subtitle">Premium downloadable PDFs and quick-reading materials.</p>
+            
+            <div class="chip-container" style="margin-bottom: 20px;">
+                <span class="chip active">Recent</span>
+                <span class="chip">HSTR Notes</span>
+                <span class="chip">GPSTR Notes</span>
+                <span class="chip">Syllabus</span>
+            </div>
+
+            <div class="notes-list">
+                <!-- Note 1 -->
+                <div class="glass-card note-item">
+                    <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+                    <div class="note-content">
+                        <h4>Figures of Speech Cheat Sheet</h4>
+                        <p>Literature • 5 pages PDF</p>
+                    </div>
+                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
+                </div>
+                <!-- Note 2 -->
+                <div class="glass-card note-item">
+                    <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+                    <div class="note-content">
+                        <h4>English Pedagogy Complete Summary</h4>
+                        <p>Pedagogy • 12 pages PDF</p>
+                    </div>
+                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
+                </div>
+                <!-- Note 3 -->
+                <div class="glass-card note-item">
+                    <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
+                    <div class="note-content">
+                        <h4>KARTET 2024 Official Syllabus</h4>
+                        <p>General • 2 pages PDF</p>
+                    </div>
+                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Mock Tests View -->
+    <div id="view-tests" class="tab-view">
+        <div class="container">
+            <h2 class="page-title">Mock Test Center</h2>
+            <p class="page-subtitle">Simulate real exams and track your progress.</p>
+            
+            <div class="test-grid">
+                <!-- Test 1 -->
+                <div class="glass-card test-card-ui">
+                    <div class="test-header">
+                        <h3 class="test-title">Test 1: ELT Approaches & Methods</h3>
+                        <span class="test-badge">25 Qs</span>
+                    </div>
+                    <div class="test-stats">
+                        <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 25 Mins</span>
+                        <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> +1, -0.25</span>
+                    </div>
+                    <button class="btn-main btn-small" onclick="alert('Test Engine starting soon...')">Start Mock Test</button>
+                </div>
+
+                <!-- Test 2 -->
+                <div class="glass-card test-card-ui">
+                    <div class="test-header">
+                        <h3 class="test-title">Test 2: GPSTR Grammar Master Quiz</h3>
+                        <span class="test-badge">50 Qs</span>
+                    </div>
+                    <div class="test-stats">
+                        <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 45 Mins</span>
+                        <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> +1, -0.0</span>
+                    </div>
+                    <button class="btn-outline btn-small" onclick="alert('Test Engine starting soon...')">Start Mock Test</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login View -->
     <div id="view-login" class="tab-view">
         <div class="container" style="max-width: 400px; margin-top: 5vh;">
             <div class="glass-card" style="padding: 30px 24px; text-align: center;">
                 <h2 style="margin-bottom: 8px; font-size: 1.5rem; font-weight: 800;">Aspirant Portal</h2>
                 <p style="color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem;">Access premium coaching for <span class="blink-free">free</span>.</p>
                 
-                <!-- Toggle Tabs -->
                 <div class="auth-tabs">
                     <button id="tab-login" class="auth-tab active" onclick="toggleAuthMode('login')">Login</button>
                     <button id="tab-register" class="auth-tab" onclick="toggleAuthMode('register')">Register Free</button>
                 </div>
 
-                <!-- Login Form -->
                 <div id="form-login" class="auth-form active">
                     <input type="tel" class="styled-input" placeholder="Mobile Number">
                     <input type="password" class="styled-input" placeholder="Password">
                     <button class="btn-main" onclick="switchTab('home')">Sign In</button>
                 </div>
 
-                <!-- Register Form (No OTP) -->
                 <div id="form-register" class="auth-form">
                     <input type="text" class="styled-input" placeholder="Full Name">
                     <input type="tel" class="styled-input" placeholder="Mobile Number">
@@ -519,40 +554,20 @@
                     
                     <input type="password" class="styled-input" placeholder="Create Password">
                     <button class="btn-main" onclick="switchTab('home')">
-                        Register for <span class="blink-free" style="color: white; margin-left: 4px;">Free</span>
+                        Register for <span class="blink-free" style="color: #000; margin-left: 4px;">Free</span>
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Placeholders for other tabs to keep navigation functional -->
-    <div id="view-videos" class="tab-view"><div class="container"><div class="glass-card" style="padding:40px;text-align:center">Video Library Interface</div></div></div>
-    <div id="view-notes" class="tab-view"><div class="container"><div class="glass-card" style="padding:40px;text-align:center">Study Notes Interface</div></div></div>
-    <div id="view-tests" class="tab-view"><div class="container"><div class="glass-card" style="padding:40px;text-align:center">Mock Test Engine Interface</div></div></div>
-
     <!-- Bottom Mobile Nav -->
     <nav class="bottom-nav">
-        <a onclick="switchTab('home')" class="nav-item active" id="mob-link-home">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-            <span>Home</span>
-        </a>
-        <a onclick="switchTab('videos')" class="nav-item" id="mob-link-videos">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg>
-            <span>Classes</span>
-        </a>
-        <a onclick="switchTab('notes')" class="nav-item" id="mob-link-notes">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
-            <span>Notes</span>
-        </a>
-        <a onclick="switchTab('tests')" class="nav-item" id="mob-link-tests">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
-            <span>Tests</span>
-        </a>
-        <a onclick="switchTab('login')" class="nav-item" id="mob-link-login">
-            <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-            <span>Profile</span>
-        </a>
+        <a onclick="switchTab('home')" class="nav-item active" id="mob-link-home"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></a>
+        <a onclick="switchTab('videos')" class="nav-item" id="mob-link-videos"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z"/></svg><span>Classes</span></a>
+        <a onclick="switchTab('notes')" class="nav-item" id="mob-link-notes"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg><span>Notes</span></a>
+        <a onclick="switchTab('tests')" class="nav-item" id="mob-link-tests"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg><span>Tests</span></a>
+        <a onclick="switchTab('login')" class="nav-item" id="mob-link-login"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><span>Profile</span></a>
     </nav>
 
     <script>
@@ -592,20 +607,15 @@
         }
         
         function toggleAuthMode(mode) {
-            // Reset tabs
             document.getElementById('tab-login').classList.remove('active');
             document.getElementById('tab-register').classList.remove('active');
-            // Set active tab
             document.getElementById('tab-' + mode).classList.add('active');
             
-            // Reset forms
             document.getElementById('form-login').classList.remove('active');
             document.getElementById('form-register').classList.remove('active');
-            // Set active form
             document.getElementById('form-' + mode).classList.add('active');
         }
         
-        // Register Service Worker for PWA (Optional but recommended)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
