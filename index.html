@@ -186,26 +186,61 @@
         }
         .chip.active { background: var(--primary); color: #000; font-weight: 700; border-color: var(--primary); }
 
-        /* --- NEW: Inner Tab Layouts (Videos, Notes, Tests) --- */
+        /* Inner Tab Layouts (Videos, Notes, Tests) */
         
-        /* Video Grid */
+        /* Video Grid & Cards */
         .video-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 20px; }
         @media (min-width: 600px) { .video-grid { grid-template-columns: repeat(2, 1fr); } }
         .vid-card { overflow: hidden; cursor: pointer; transition: transform 0.2s; }
         .vid-card:active { transform: scale(0.98); }
+        
+        /* Dynamic Thumbnail Background */
         .vid-thumbnail { 
-            height: 180px; background-color: var(--bg-elevated); position: relative; 
+            height: 180px; 
+            background-color: var(--bg-elevated); 
+            background-size: cover; 
+            background-position: center;
+            position: relative; 
             display: flex; align-items: center; justify-content: center;
-            background-image: linear-gradient(45deg, rgba(0,0,0,0.5), rgba(0,0,0,0.1));
+        }
+        /* A dark overlay so the play button is always visible */
+        .vid-thumbnail::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 1;
         }
         .play-btn-overlay { 
             width: 50px; height: 50px; background: var(--primary); border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; color: #000; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            display: flex; align-items: center; justify-content: center; color: #000; 
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); z-index: 2;
         }
-        .vid-duration { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600;}
+        .vid-duration { 
+            position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.8); 
+            color: white; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600; z-index: 2;
+        }
         .vid-details { padding: 16px; }
         .vid-title { font-size: 1.05rem; font-weight: 700; margin-bottom: 8px; line-height: 1.3; }
         .vid-meta { display: flex; gap: 12px; font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+        /* Full Screen Video Modal Player */
+        .video-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 2000; display: none;
+            align-items: center; justify-content: center; flex-direction: column;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        .video-modal.active { display: flex; animation: fadeIn 0.3s ease-out; }
+        .video-modal-content { width: 100%; max-width: 800px; padding: 20px; }
+        .close-video {
+            align-self: flex-end; background: none; border: none; color: white;
+            font-size: 1rem; font-weight: 700; padding: 10px; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+        }
+        /* 16:9 Aspect Ratio Box for YouTube */
+        .iframe-container {
+            position: relative; width: 100%; padding-bottom: 56.25%; height: 0;
+            background: #000; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
 
         /* Notes List */
         .notes-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
@@ -373,6 +408,58 @@
                 </div>
             </div>
 
+            <!-- Latest Content -->
+            <div>
+                <h2 class="section-title">Latest Content</h2>
+                <div class="scroll-row">
+                    <div class="glass-card content-card" onclick="switchTab('videos')">
+                        <div class="content-thumb">
+                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M8 5v14l11-7z"/></svg>
+                            <span class="content-badge">Video</span>
+                        </div>
+                        <div class="content-info">
+                            <h4>Idioms & Phrases — PYQs</h4>
+                            <div class="content-meta"><span>GPSTR / HSTR</span><span>24 mins</span></div>
+                        </div>
+                    </div>
+                    <div class="glass-card content-card" onclick="switchTab('tests')">
+                        <div class="content-thumb">
+                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                            <span class="content-badge" style="background: rgba(239, 68, 68, 0.8);">Mock Test</span>
+                        </div>
+                        <div class="content-info">
+                            <h4>Approaches & Methods of ELT</h4>
+                            <div class="content-meta"><span>Pedagogy</span><span>25 Qs</span></div>
+                        </div>
+                    </div>
+                    <div class="glass-card content-card" onclick="switchTab('notes')">
+                        <div class="content-thumb">
+                            <svg viewBox="0 0 24 24" width="32" height="32"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                            <span class="content-badge" style="background: rgba(139, 92, 246, 0.8);">Notes</span>
+                        </div>
+                        <div class="content-info">
+                            <h4>Literary Forms & Terms</h4>
+                            <div class="content-meta"><span>Literature</span><span>Read</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Popular Topics -->
+            <div>
+                <h2 class="section-title">Popular Topics</h2>
+                <div class="chip-container">
+                    <span class="chip">Grammar</span>
+                    <span class="chip">Vocabulary</span>
+                    <span class="chip">Pedagogy</span>
+                    <span class="chip">Literature</span>
+                    <span class="chip">PYQs</span>
+                    <span class="chip">Mock Tests</span>
+                    <span class="chip">Phonology</span>
+                    <span class="chip">Reading Comprehension</span>
+                </div>
+            </div>
+
             <!-- Footer & Social Icons -->
             <footer class="footer">
                 <p>Join our community of future teachers.</p>
@@ -385,59 +472,41 @@
         </div>
     </div>
 
-    <!-- NEW: Videos View -->
+    <!-- NEW: Videos View (Dynamic YouTube Player) -->
     <div id="view-videos" class="tab-view">
         <div class="container">
             <h2 class="page-title">Video Library</h2>
             <p class="page-subtitle">Access your free daily classes and past series.</p>
             
             <div class="chip-container" style="margin-bottom: 20px;">
-                <span class="chip active">All Videos</span>
-                <span class="chip">Grammar</span>
-                <span class="chip">Pedagogy</span>
-                <span class="chip">Literature</span>
-                <span class="chip">PYQs</span>
+                <span class="chip active" onclick="filterVideos('All', this)">All Videos</span>
+                <span class="chip" onclick="filterVideos('Grammar', this)">Grammar</span>
+                <span class="chip" onclick="filterVideos('Pedagogy', this)">Pedagogy</span>
+                <span class="chip" onclick="filterVideos('Literature', this)">Literature</span>
+                <span class="chip" onclick="filterVideos('PYQs', this)">PYQs</span>
             </div>
 
-            <div class="video-grid">
-                <!-- Video 1 -->
-                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
-                    <div class="vid-thumbnail">
-                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-                        <span class="vid-duration">45:20</span>
-                    </div>
-                    <div class="vid-details">
-                        <h4 class="vid-title">Idioms & Phrases — Top 50 PYQs for GPSTR</h4>
-                        <div class="vid-meta"><span>Grammar / Vocab</span><span>•</span><span>2 days ago</span></div>
-                    </div>
+            <!-- This empty box gets filled by the JavaScript code below -->
+            <div id="videoGridContainer" class="video-grid"></div>
+
+        </div>
+
+        <!-- Pop-up Cinematic Video Player -->
+        <div id="videoModal" class="video-modal">
+            <div class="video-modal-content">
+                <button class="close-video" onclick="closeVideo()">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                    Close
+                </button>
+                <div class="iframe-container" id="iframeContainer">
+                    <!-- YouTube video gets injected here -->
                 </div>
-                <!-- Video 2 -->
-                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
-                    <div class="vid-thumbnail">
-                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-                        <span class="vid-duration">38:15</span>
-                    </div>
-                    <div class="vid-details">
-                        <h4 class="vid-title">Approaches and Methods of ELT Explained</h4>
-                        <div class="vid-meta"><span>Pedagogy</span><span>•</span><span>1 week ago</span></div>
-                    </div>
-                </div>
-                <!-- Video 3 -->
-                <div class="glass-card vid-card" onclick="alert('Video Player opening soon...')">
-                    <div class="vid-thumbnail">
-                        <div class="play-btn-overlay"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></div>
-                        <span class="vid-duration">55:00</span>
-                    </div>
-                    <div class="vid-details">
-                        <h4 class="vid-title">Subject-Verb Agreement Rules Masterclass</h4>
-                        <div class="vid-meta"><span>Grammar</span><span>•</span><span>2 weeks ago</span></div>
-                    </div>
-                </div>
+                <h3 id="playingVideoTitle" style="color: white; margin-top: 16px; text-align: center;"></h3>
             </div>
         </div>
     </div>
 
-    <!-- NEW: Notes View -->
+    <!-- Notes View -->
     <div id="view-notes" class="tab-view">
         <div class="container">
             <h2 class="page-title">Study Notes Hub</h2>
@@ -451,45 +520,33 @@
             </div>
 
             <div class="notes-list">
-                <!-- Note 1 -->
                 <div class="glass-card note-item">
                     <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
                     <div class="note-content">
                         <h4>Figures of Speech Cheat Sheet</h4>
                         <p>Literature • 5 pages PDF</p>
                     </div>
-                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
+                    <button class="btn-outline btn-small" onclick="alert('PDF Viewer launching soon...')">Read</button>
                 </div>
-                <!-- Note 2 -->
                 <div class="glass-card note-item">
                     <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
                     <div class="note-content">
                         <h4>English Pedagogy Complete Summary</h4>
                         <p>Pedagogy • 12 pages PDF</p>
                     </div>
-                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
-                </div>
-                <!-- Note 3 -->
-                <div class="glass-card note-item">
-                    <div class="note-icon-box"><svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg></div>
-                    <div class="note-content">
-                        <h4>KARTET 2024 Official Syllabus</h4>
-                        <p>General • 2 pages PDF</p>
-                    </div>
-                    <button class="btn-outline btn-small" onclick="alert('Opening Document...')">Read</button>
+                    <button class="btn-outline btn-small" onclick="alert('PDF Viewer launching soon...')">Read</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- NEW: Mock Tests View -->
+    <!-- Mock Tests View -->
     <div id="view-tests" class="tab-view">
         <div class="container">
             <h2 class="page-title">Mock Test Center</h2>
             <p class="page-subtitle">Simulate real exams and track your progress.</p>
             
             <div class="test-grid">
-                <!-- Test 1 -->
                 <div class="glass-card test-card-ui">
                     <div class="test-header">
                         <h3 class="test-title">Test 1: ELT Approaches & Methods</h3>
@@ -499,10 +556,9 @@
                         <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 25 Mins</span>
                         <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> +1, -0.25</span>
                     </div>
-                    <button class="btn-main btn-small" onclick="alert('Test Engine starting soon...')">Start Mock Test</button>
+                    <button class="btn-main btn-small" onclick="alert('Test Engine loading soon...')">Start Mock Test</button>
                 </div>
 
-                <!-- Test 2 -->
                 <div class="glass-card test-card-ui">
                     <div class="test-header">
                         <h3 class="test-title">Test 2: GPSTR Grammar Master Quiz</h3>
@@ -512,7 +568,7 @@
                         <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> 45 Mins</span>
                         <span class="stat-item"><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg> +1, -0.0</span>
                     </div>
-                    <button class="btn-outline btn-small" onclick="alert('Test Engine starting soon...')">Start Mock Test</button>
+                    <button class="btn-outline btn-small" onclick="alert('Test Engine loading soon...')">Start Mock Test</button>
                 </div>
             </div>
         </div>
@@ -591,16 +647,12 @@
         }
 
         function switchTab(tabId) {
-            // Hide all views
             document.querySelectorAll('.tab-view').forEach(view => view.classList.remove('active'));
-            // Remove active state from nav items
             document.querySelectorAll('.nav-item').forEach(link => link.classList.remove('active'));
 
-            // Show selected view
             const viewElement = document.getElementById('view-' + tabId);
             if(viewElement) viewElement.classList.add('active');
 
-            // Highlight nav icon
             if(document.getElementById('mob-link-' + tabId)) document.getElementById('mob-link-' + tabId).classList.add('active');
             
             window.scrollTo(0,0);
@@ -615,7 +667,105 @@
             document.getElementById('form-register').classList.remove('active');
             document.getElementById('form-' + mode).classList.add('active');
         }
+
+        // --- NEW VIDEO SYSTEM LOGIC ---
         
+        // This is your video database. To add a new video, just add a new block here!
+        // The "id" is the random letters/numbers at the very end of any YouTube link.
+        const videoData = [
+            {
+                id: "dQw4w9WgXcQ", 
+                title: "Idioms & Phrases — Top 50 PYQs for GPSTR",
+                category: "PYQs",
+                duration: "45:20",
+                date: "2 days ago"
+            },
+            {
+                id: "M7lc1UVf-VE",
+                title: "Approaches and Methods of ELT Explained",
+                category: "Pedagogy",
+                duration: "38:15",
+                date: "1 week ago"
+            },
+            {
+                id: "jNQXAC9IVRw",
+                title: "Subject-Verb Agreement Rules Masterclass",
+                category: "Grammar",
+                duration: "55:00",
+                date: "2 weeks ago"
+            },
+            {
+                id: "C0DPdy98e4c",
+                title: "Figures of Speech in English Literature",
+                category: "Literature",
+                duration: "32:10",
+                date: "3 weeks ago"
+            }
+        ];
+
+        function renderVideos(filter = 'All') {
+            const container = document.getElementById('videoGridContainer');
+            container.innerHTML = ''; 
+            
+            const filteredVideos = filter === 'All' ? videoData : videoData.filter(v => v.category === filter);
+            
+            if (filteredVideos.length === 0) {
+                container.innerHTML = '<p style="color: var(--text-muted); grid-column: 1/-1; text-align: center; padding: 20px;">No videos found for this category yet.</p>';
+                return;
+            }
+
+            filteredVideos.forEach(vid => {
+                // Auto-fetch YouTube Thumbnail
+                const thumbUrl = `https://img.youtube.com/vi/${vid.id}/hqdefault.jpg`;
+                
+                const card = document.createElement('div');
+                card.className = 'glass-card vid-card';
+                card.onclick = () => openVideo(vid.id, vid.title);
+                
+                // Construct the card HTML
+                card.innerHTML = `
+                    <div class="vid-thumbnail" style="background-image: url('${thumbUrl}');">
+                        <div class="play-btn-overlay">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <span class="vid-duration">${vid.duration}</span>
+                    </div>
+                    <div class="vid-details">
+                        <h4 class="vid-title">${vid.title}</h4>
+                        <div class="vid-meta">
+                            <span>${vid.category}</span><span>•</span><span>${vid.date}</span>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Filters videos when you click the chips (Grammar, Pedagogy, etc)
+        function filterVideos(category, element) {
+            document.querySelectorAll('#view-videos .chip').forEach(c => c.classList.remove('active'));
+            element.classList.add('active');
+            renderVideos(category);
+        }
+
+        // Opens the popup player
+        function openVideo(youtubeId, title) {
+            document.getElementById('playingVideoTitle').innerText = title;
+            const iframeContainer = document.getElementById('iframeContainer');
+            // This URL forces the video to autoplay
+            iframeContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${youtubeId}?autoplay=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            document.getElementById('videoModal').classList.add('active');
+        }
+
+        // Closes the popup player and stops the video
+        function closeVideo() {
+            document.getElementById('videoModal').classList.remove('active');
+            document.getElementById('iframeContainer').innerHTML = ''; // This stops the audio
+        }
+
+        // Initialize videos when the page first loads
+        renderVideos();
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW registration failed:', err));
