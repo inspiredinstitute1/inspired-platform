@@ -2,7 +2,7 @@
 
 The portal is live at https://inspiredinstitute.in/ with an active HTTPS certificate. The final-domain browser checks passed for anonymous notes and homophones search, the test catalogue, test start and Previous/Next navigation, video and APPX routes, progress navigation, persistent light/dark switching, the legacy /index.html redirect, and Sign in with ChatGPT with account saving and server-selected Admin access. No test was submitted for QA.
 
-The www.inspiredinstitute.in CNAME is saved to the Sites target and ownership is validated. Its separate HTTPS certificate remains pending_validation at this checkpoint. Do not describe www as fully live until native Sites status is active and a browser HTTPS check passes. No browser security warning was bypassed.
+Both inspiredinstitute.in and www.inspiredinstitute.in now have native Sites status active, provider status active and SSL status active. Both URLs loaded the new portal in the connected Chrome browser over HTTPS. Anonymous access was checked again after signing out of the owner account. No browser security warning was bypassed.
 
 ## Source and hosting
 
