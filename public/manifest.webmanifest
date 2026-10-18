@@ -1,0 +1,49 @@
+{
+  "id": "/",
+  "name": "InspirED Institute",
+  "short_name": "InspirED",
+  "description": "Free Video Lessons • Study Notes • PYQs • Mock Tests",
+  "lang": "en-IN",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080807",
+  "theme_color": "#080807",
+  "categories": [
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Free study notes",
+      "url": "/#/notes"
+    },
+    {
+      "name": "Practice tests",
+      "url": "/#/tests"
+    },
+    {
+      "name": "Video classes",
+      "url": "/#/videos"
+    }
+  ]
+}
