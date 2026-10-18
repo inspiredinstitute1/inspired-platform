@@ -1,0 +1,17 @@
+import fs from 'node:fs';
+import vm from 'node:vm';
+fs.mkdirSync('public',{recursive:true});
+for(const name of ['style.css','theme.css'])fs.copyFileSync('portal/'+name,'public/'+name);
+fs.cpSync('portal/assets','public/assets',{recursive:true});
+const shell=fs.readFileSync('portal/index.html','utf8').split('<body>')[1].split('</body>')[0];
+fs.writeFileSync('lib/portal-shell.ts','export const portalShell = '+JSON.stringify(shell)+';\n');
+const app=fs.readFileSync('portal/app.js','utf8');
+const data=app.slice(app.indexOf('const NOTES='),app.indexOf("const boot=window"));
+const c=vm.createContext({});
+for(const f of ['catalogue.js','homophones.js','mock-test-7.js'])vm.runInContext(fs.readFileSync('portal/'+f,'utf8'),c);
+vm.runInContext(data,c);
+const bank=JSON.parse(vm.runInContext('JSON.stringify({tests:TESTS,notes:NOTES.map(n=>n.id),videos:VIDEOS.map(v=>v.id)})',c));
+fs.writeFileSync('lib/portal-catalogue.json',JSON.stringify(bank));
+const boot=fs.readFileSync('portal/cloud-boot.js','utf8');
+fs.writeFileSync('public/portal.bundle.js','(async function(){\n'+boot+'\n'+['catalogue.js','homophones.js','mock-test-7.js','app.js','cloud-sync.js'].map(f=>fs.readFileSync('portal/'+f,'utf8')).join('\n;\n')+'\n})();');
+console.log('Prepared retained portal assets, shell, script bundle and scoring catalogue.');
