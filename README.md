@@ -33,4 +33,6 @@ Production deployments use the Sites source and build workflow. The same source 
 
 ## Release status
 
-This is a prepared source replacement. The existing GitHub Pages main branch remains live until the domain switch is verified. Read MIGRATION.md before merging. Original source is preserved at backup/before-learning-portal-2026-10-18.
+The portal is live with HTTPS at https://inspiredinstitute.in/. Its source replaces the earlier static website. Sites runs the application and database; GitHub retains the source. The www hostname's routing is saved but its separate HTTPS validation is still pending. Read MIGRATION.md for the activation checkpoint and backup. Original source is preserved at backup/before-learning-portal-2026-10-18.
+
+The legacy /index.html route redirects to the homepage. A retirement worker at /sw.js clears only the previous site's public-shell caches and unregisters itself; learner storage and unrelated caches are preserved.

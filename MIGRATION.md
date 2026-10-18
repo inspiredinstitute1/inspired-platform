@@ -1,25 +1,17 @@
 # Domain migration checkpoint
 
-## Prepared state
+The portal is live at https://inspiredinstitute.in/ with an active HTTPS certificate. The final-domain browser checks passed for anonymous notes and homophones search, the test catalogue, test start and Previous/Next navigation, video and APPX routes, progress navigation, persistent light/dark switching, the legacy /index.html redirect, and Sign in with ChatGPT with account saving and server-selected Admin access. No test was submitted for QA.
 
-- Existing GitHub main: 1d251abb6fcb9613c1a9c2fe7288c05b5744a829.
-- Exact backup: backup/before-learning-portal-2026-10-18.
-- Replacement matches tested Sites source 1c94ff0be3603fd582c54a03eee1e88cefbac697, except repository documentation and the retained CNAME marker.
-- New deployment: https://inspired-learning-portal.faceacademy01.chatgpt.site.
-- Final addresses: https://inspiredinstitute.in/ and https://www.inspiredinstitute.in/.
-- Both hostnames are registered with Sites; verification, routing and HTTPS activation remain pending.
-- No registrar DNS change has been saved. GitHub main still has its original pages.
+The www.inspiredinstitute.in CNAME is saved to the Sites target and ownership is validated. Its separate HTTPS certificate remains pending_validation at this checkpoint. Do not describe www as fully live until native Sites status is active and a browser HTTPS check passes. No browser security warning was bypassed.
 
-## Release order
+## Source and hosting
 
-1. Resolve the unfinished GoDaddy form restriction. One TXT record was staged and a second row was empty at the last successful observation. No save completed. Automatic approval review blocked further GoDaddy access, including cancelling the form. Do not bypass this block through another tool or browser.
-2. After the restriction is resolved, obtain current validation records from native Sites controls and add those verification records at the registrar. Preserve nameservers, SOA, domainconnect, DMARC and email settings.
-3. Complete the approved routing switch using the exact A/CNAME targets returned by Sites. Confirm both hostnames are active and HTTPS is valid.
-4. Validate anonymous notes/PDF/test, video and APPX routes, both themes, optional sign-in and saved account progress at the final domain. Check returning visitors can see the new portal despite the legacy service worker.
-5. Release the legacy GitHub Pages custom-domain claim through supported hosting controls and merge this prepared replacement after the new domain works. Merging early removes the old Pages entry point and could interrupt the old site.
+This source matches deployed Sites commit d0021224d86758b15bdfaad7b071b164214a66aa, excluding private operational snapshots and with repository-specific documentation and the retained CNAME marker. GitHub retains the source; the Vinext Worker, Sites-managed sign-in and D1 database run on Sites. This is not a GitHub Pages static export. Retiring the old Pages publishing configuration is separate from the successful DNS routing switch and should preserve access for visitors with cached old DNS while propagation completes.
 
-## Rollback
+GoDaddy saved both platform-issued apex A targets and the www CNAME with 600-second TTLs. Four validation TXT records were saved. Original GitHub A records were removed or replaced. Nameserver, SOA, domainconnect and DMARC records were preserved. Runtime credentials and student records are excluded from GitHub.
 
-The original GitHub Pages source remains on main and the backup branch until migration. For a later rollback, restore the captured pre-migration DNS routing and preserved Pages source, verify the domain claim and HTTPS, and preserve the Sites student database.
+## Backup and rollback
 
-No live credentials or student records are included. Obtain DNS verification values afresh from Sites rather than reusing a stale checkpoint.
+The exact previous site is preserved at backup/before-learning-portal-2026-10-18, commit 1d251abb6fcb9613c1a9c2fe7288c05b5744a829. To roll back a future hosting change, restore the captured pre-migration DNS routing and the preserved Pages source, verify custom-domain and HTTPS state, and preserve the Sites student database. DNS verification values must be obtained from current Sites domain controls rather than stale copies.
+
+The production Worker build and legacy-worker checks passed. The unchanged quiz layout was previously verified at 320/360 pixels; the final-domain browser's viewport override did not resize its page, so phone emulation was not re-verified during this DNS switch. Actual two-device account saving remains a separate acceptance check.
