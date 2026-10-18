@@ -1,0 +1,35 @@
+InspirED Institute
+Active & Passive Voice
+
+Prototype study note · Created for private review
+
+
+The central pattern
+For a straightforward active clause with a direct object, the object can become the subject of the passive clause. Use the appropriate form of be + past participle (V3).
+Active: Ravi writes a letter.
+Passive: A letter is written by Ravi.
+
+Keep the tense
+
+• Simple present: writes → is / am / are written
+• Simple past: wrote → was / were written
+• Present continuous: is writing → is being written
+• Present perfect: has written → has been written
+• Simple future: will write → will be written
+• Modal: can write → can be written
+
+Watch the pronouns
+She helps him.
+He is helped by her.
+
+Common errors and limits
+V3 is mandatory in the standard passive construction. “A letter is wrote” is incorrect; use “written”. The form of “be” must also agree with the new subject.
+Intransitive verbs such as “arrive” have no direct object and do not form an ordinary object-based passive. “He arrived” has no standard passive transformation.
+The “by” phrase is optional when the agent is unknown, unimportant or obvious: “The window was broken.”
+
+
+Exam trap
+Do not change the tense while transforming the sentence. “Ravi wrote a letter” becomes “A letter was written by Ravi”, not “is written”.
+ಕಾಲ ಬದಲಾಗಬಾರದು. ಮುಖ್ಯ ಕ್ರಿಯಾಪದದ V3 ರೂಪ ಬೇಕು.
+
+EMPOWER TEACHERS • TRANSFORM GENERATIONS.
