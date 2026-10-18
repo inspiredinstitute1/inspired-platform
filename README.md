@@ -35,4 +35,10 @@ Production deployments use the Sites source and build workflow. The same source 
 
 The portal is live with HTTPS at https://inspiredinstitute.in/. Its source replaces the earlier static website. Sites runs the application and database; GitHub retains the source. Both inspiredinstitute.in and www.inspiredinstitute.in are active with HTTPS and have been checked in the browser. Read MIGRATION.md for the activation checkpoint and backup. Original source is preserved at backup/before-learning-portal-2026-10-18.
 
-The legacy /index.html route redirects to the homepage. A retirement worker at /sw.js clears only the previous site's public-shell caches and unregisters itself; learner storage and unrelated caches are preserved.
+The legacy /index.html route redirects to the homepage. The PWA worker at /sw.js clears the previous site's public-shell caches and caches only allowlisted public assets. Identity-bearing HTML, APIs and auth routes remain outside the service-worker cache.
+
+## Phone navigation and installation
+
+Phones have fixed Home, Classes, Notes, Tests and Profile buttons, route-aware highlighting, larger text and tap targets, and black-and-gold glass or ivory/gold light themes. The live layout was checked at 320 and 354 CSS pixels, including single-row Previous/Flag/Next controls and theme persistence.
+
+Profile → Install InspirED offers a native install prompt when supported and Android/iPhone instructions otherwise. The standalone web app has branded 192/512 icons and a maskable icon. Its offline page can open previously saved public notes; account pages and student data are never cached by the worker. Premium courses remain in APPX.
