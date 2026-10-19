@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -366,6 +366,25 @@ try {
     const reversals=await api(previewPath,'owner','POST',reversalInput);assert.equal(reversals.blockedCount,2);assert.equal(reversals.totals.refundPaise,0);assert.equal(reversals.totals.tuitionGrossPaise,10000);assert.equal(reversals.totalsComplete,false);assert(reversals.rows.slice(1).every(row=>row.blockers.includes('refunds_exceed_original_gross')));
     assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS D1 saved ledger preview, separate activation totals, stale-review protection, over-refund blocking and unchanged access');
+    const evidencePath='/api/admin/finance-evidence';
+    const evidenceInput={rowId:reviewInput.rowId,reviewVersion:3,version:0,status:'confirmed',method:'provider_statement',attested:true,notes:'Synthetic original provider evidence checked manually',reason:'Exercise synthetic attestation'};
+    await api(evidencePath,'owner','POST',{...evidenceInput,attested:false},400);
+    const attested=await api(evidencePath,'owner','POST',{...evidenceInput,snapshotJson:'FORGED',changedBy:'spoof'},201);assert(attested.manualAttestationOnly);assert.equal(attested.verification,'unverified');assert.equal(attested.canPost,false);
+    await api(evidencePath,'owner','POST',evidenceInput,409);
+    let evidenceRows=await api(evidencePath+'?batchId='+imported.batchId,'owner');assert.equal(evidenceRows.rows[0].effectiveState,'confirmed');assert.equal(evidenceRows.rows[0].decision.changedBy,'synthetic-owner');assert.equal(JSON.parse(evidenceRows.rows[0].decision.snapshotJson).transaction.grossPaise,99900);assert.equal(evidenceRows.audit.length,1);
+    await api(evidencePath,'owner','POST',{...evidenceInput,rowId:imported.batchId+':4',reviewVersion:1},201);
+    assert((await api(previewPath,'owner','POST',previewInput)).manualEvidenceComplete);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,version:3,evidenceNotes:'Synthetic corrected review note',reason:'Invalidate old evidence decision'});
+    evidenceRows=await api(evidencePath+'?batchId='+imported.batchId,'owner');assert.equal(evidenceRows.rows[0].effectiveState,'stale');assert.equal(evidenceRows.rows[0].decision.status,'confirmed');assert.equal(evidenceRows.rows[0].decision.reviewVersion,3);assert.equal(evidenceRows.rows[0].reviewVersion,4);
+    await api(evidencePath,'owner','POST',{...evidenceInput,version:1},409);
+    previewInput.versions[0].version=4;const staleEvidence=await api(previewPath,'owner','POST',previewInput);assert.equal(staleEvidence.manualEvidenceComplete,false);assert.equal(staleEvidence.rows[0].evidenceState,'stale');assert.equal(staleEvidence.canPost,false);
+    await api(evidencePath,'owner','POST',{...evidenceInput,version:1,reviewVersion:4,reason:'Recheck corrected review'});
+    await api(evidencePath,'owner','POST',{...evidenceInput,version:2,reviewVersion:4,status:'disputed',attested:false,reason:'Synthetic concern reopened'});
+    evidenceRows=await api(evidencePath+'?batchId='+imported.batchId,'owner');assert.equal(evidenceRows.rows[0].effectiveState,'disputed');assert.equal(evidenceRows.audit.length,4);assert.equal(JSON.parse(evidenceRows.audit[0].previousJson).status,'confirmed');
+    await api(evidencePath,'student','POST',evidenceInput,403);await api(evidencePath,'owner','POST',evidenceInput,403,'https://other.example.test');await api(evidencePath,'owner','DELETE',{},405);
+    assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 manual Admin evidence attestations, immutable snapshots, stale/reconfirmation/dispute lifecycle, audit and disabled posting/access');
+
 
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');

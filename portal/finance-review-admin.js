@@ -1,9 +1,10 @@
 'use strict';
 let financeReviewData=null,financeReviewLoad=0;
-function financeReviewPanel(){return `<section class="panel admin-manager" style="margin-bottom:24px"><h2>Learner matching and evidence review</h2><p class="small muted">Select a batch above, then an accepted row below. Claimed learner/course fields are not trusted matches. Evidence references are tracking notes, not uploaded or independently verified payment proof. Reviewed records remain unverified and do not post revenue or grant access.</p><div id="finance-review-list" aria-live="polite">Select an import batch.</div><div id="finance-review-editor"></div><details><summary>Matching and evidence history (latest 50 changes in this batch)</summary><div id="finance-review-audit"></div></details><div id="finance-ledger-preview"></div></section>`;}
+function financeReviewPanel(){return `<section class="panel admin-manager" style="margin-bottom:24px"><h2>Learner matching and evidence review</h2><p class="small muted">Select a batch above, then an accepted row below. Claimed learner/course fields are not trusted matches. Evidence references are tracking notes, not uploaded or independently verified payment proof. Reviewed records remain unverified and do not post revenue or grant access.</p><div id="finance-review-list" aria-live="polite">Select an import batch.</div><div id="finance-review-editor"></div><details><summary>Matching and evidence history (latest 50 changes in this batch)</summary><div id="finance-review-audit"></div></details><div id="finance-evidence-panel"></div><div id="finance-ledger-preview"></div></section>`;}
 async function loadFinanceReview(batchId='',selectedRowId=''){
  const list=document.getElementById('finance-review-list'),editor=document.getElementById('finance-review-editor'),audit=document.getElementById('finance-review-audit');if(!list||!editor||!audit)return;
  if(typeof renderFinanceLedgerPreview==='function')renderFinanceLedgerPreview(null);
+ if(typeof clearFinanceEvidence==='function')clearFinanceEvidence();
  const generation=++financeReviewLoad;financeReviewData=null;editor.innerHTML='';list.textContent='Loading review rows…';audit.innerHTML='';
  try{
   const response=await fetch('/api/admin/finance-review'+(batchId?'?batchId='+encodeURIComponent(batchId):''),{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(generation!==financeReviewLoad||!list.isConnected)return;if(!response.ok)throw Error(data.error||'Payment reviews unavailable.');financeReviewData=data;
@@ -11,6 +12,7 @@ async function loadFinanceReview(batchId='',selectedRowId=''){
   audit.innerHTML=data.audit.map(item=>`<details class="notice"><summary>${esc(item.rowId)} · ${esc(item.reason)}</summary><p>${esc(item.actorId)} · ${esc(new Date(item.changedAt).toLocaleString())}</p><pre class="authored-note-text">${esc(JSON.stringify({before:item.previousJson?JSON.parse(item.previousJson):null,after:JSON.parse(item.nextJson)},null,2))}</pre></details>`).join('')||'<p>No matching or evidence changes recorded.</p>';
   if(typeof renderFinanceLedgerPreview==='function')renderFinanceLedgerPreview(data);
   if(selectedRowId)openFinanceReview(selectedRowId);
+  if(typeof loadFinanceEvidence==='function'&&data.batch?.id)await loadFinanceEvidence(data.batch.id);
  }catch(error){if(generation===financeReviewLoad&&list.isConnected)list.textContent=error.message;}
 }
 function openFinanceReview(rowId){
