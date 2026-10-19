@@ -132,3 +132,35 @@ test('programme conflict preserves the unsaved edit and restores form controls',
   assert.equal(h.fields.title.disabled,false);
   assert.match(h.message.textContent,/newer version/);
 });
+
+function enrolmentHarness(){
+  const values={id:'',version:'',learnerId:'synthetic-student',nodeId:'00000000-0000-4000-8000-000000000001',status:'pending',startsAt:'2026-01-01T10:00:00',endsAt:'',reason:'Record website enrolment'};
+  const fields=Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{value,disabled:false}]));
+  const form=Object.assign(element(),{elements:fields,querySelectorAll:()=>Object.values(fields)}),message=element(),requests=[];
+  const context=load('admin-ui.js',{
+    document:{getElementById:id=>id==='enrolment-message'?message:form},
+    fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok:true,json:async()=>({id:'00000000-0000-4000-8000-000000000002',version:(body.version||0)+1})};},
+  });
+  vm.runInContext(readFileSync('portal/enrolment-admin.js','utf8'),context);context.loadEnrolmentAdmin=async()=>{};
+  return{context,form,fields,message,requests};
+}
+
+test('enrolment form saves versioned edits without changing the selected student, programme or start',async()=>{
+  const h=enrolmentHarness();await h.context.saveEnrolment(h.form);
+  assert(h.fields.learnerId.disabled);assert(h.fields.nodeId.disabled);
+  h.fields.status.value='active';h.fields.reason.value='Approve website enrolment';
+  await h.context.saveEnrolment(h.form);
+  assert.equal(h.requests[1].version,1);assert(h.requests[1].id);
+  assert.equal(h.requests[1].learnerId,h.requests[0].learnerId);
+  assert.equal(h.requests[1].startsAt,h.requests[0].startsAt);
+  assert.equal(h.fields.version.value,2);
+});
+
+test('enrolment form rejects invalid/reversed dates before serializing them as unlimited expiry',async()=>{
+  const h=enrolmentHarness();
+  for(const end of ['invalid date','2025-01-01T10:00:00']){
+    h.fields.endsAt.value=end;await h.context.saveEnrolment(h.form);
+    assert.match(h.message.textContent,/valid dates/);
+  }
+  assert.equal(h.requests.length,0);assert.equal(h.fields.reason.disabled,false);
+});

@@ -15,7 +15,7 @@ assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -49,7 +49,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/progress', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/progress', '/api/enrolments', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -77,7 +77,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner');
     }
@@ -172,6 +172,30 @@ try {
     await api('/api/admin/resources','owner','POST',{},403,'https://other.example.test');
     await api('/api/admin/resources','owner','DELETE',{id:materialLinks[0].id},405);
     console.log('PASS D1 resource linking, ordering, duplicates, visibility, conflicts and history preservation');
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:7,status:'published'});
+    const enrolledCourse=content.nodes.find(node=>node.kind==='course');
+    const note=resourceCatalogue.find(resource=>resource.kind==='note');
+    await api('/api/admin/resources','owner','POST',{nodeId:enrolledCourse.id,kind:'note',resourceId:note.id,enabled:true,sortOrder:1,reason:'Link a free note to enrolled course'},201);
+    const enrolment={nodeId:enrolledCourse.id,learnerId:'synthetic-student',status:'pending',startsAt:0,endsAt:null,reason:'Synthetic website enrolment'};
+    const enrolled=await api('/api/admin/enrolments','owner','POST',enrolment,201);
+    let own=(await api('/api/enrolments','student')).enrolments[0];assert.equal(own.effectiveStatus,'pending');assert.equal(own.resources.length,0);
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,...enrolled,status:'active'});
+    own=(await api('/api/enrolments?learnerId=synthetic-other','student')).enrolments[0];assert.equal(own.available,true);assert.equal(own.resources.length,1);assert(!('learnerId' in own));assert(!('reason' in own));
+    assert.equal((await api('/api/enrolments?learnerId=synthetic-student','other')).enrolments.length,0);
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,...enrolled,version:2,status:'active',endsAt:1});
+    own=(await api('/api/enrolments','student')).enrolments[0];assert.equal(own.effectiveStatus,'expired');assert.equal(own.resources.length,0);
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,...enrolled,version:3,status:'revoked'});
+    assert.equal((await api('/api/enrolments','student')).enrolments[0].effectiveStatus,'revoked');
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,...enrolled,status:'active'},409);
+    await api('/api/admin/enrolments','owner','POST',enrolment,409);
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,learnerId:'synthetic-owner'},400);
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,learnerId:'unknown-student'},400);
+    await api('/api/admin/enrolments','student','POST',enrolment,403);
+    await api('/api/enrolments','student','POST',enrolment,405);
+    await api('/api/admin/enrolments','owner','POST',enrolment,403,'https://other.example.test');
+    await api('/api/admin/enrolments','owner','DELETE',{id:enrolled.id},405);
+    const roster=await api('/api/admin/enrolments','owner');assert.equal(roster.enrolments.length,1);assert.equal(roster.audit.length,4);assert(roster.learners.every(learner=>learner.id!=='synthetic-owner'));
+    console.log('PASS D1 enrolment lifecycle, expiry, identity isolation, anti-self-approval and audit preservation');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {

@@ -20,7 +20,7 @@ The programme list is empty initially. No sample programme is published automati
 ## Technical validation
 
 Explicit development migration: `docs/migrations/0004_content_manager.sql`.
-It is outside the generated Drizzle journal, like the earlier Admin migrations. Apply the base and all five Admin SQL migrations only to an approved isolated target.
+It is outside the generated Drizzle journal, like the earlier Admin migrations. Apply the base and all six Admin SQL migrations only to an approved isolated target.
 
 Local checks:
 
@@ -38,7 +38,7 @@ The Admin API is `/api/admin/content`; public discovery uses `/api/catalogue`. P
 ## Remaining work
 
 - Real browser/mobile and provider-authenticated checks.
-- Authoring new learning material, enrolments, faculty assignments and complete dynamic navigation.
+- Authoring new learning material, verified paid entitlements, faculty assignments and complete dynamic navigation. Manual website enrolments are described in `ENROLMENTS.md`.
 - Larger-catalogue pagination/search and richer audit inspection. The form currently lists all programme records.
 - Remote staging migration, backup/rollback verification and owner-approved release.
 

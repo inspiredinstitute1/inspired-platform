@@ -11,7 +11,7 @@ In the Admin workspace, find **Programme learning materials**:
 
 Students find the links by expanding published programmes in **Explore programmes** on the homepage. Paused/archived programmes and unpublished ancestor branches do not appear. The original free notes, videos and tests remain accessible in their existing library pages.
 
-Private Admin preview notes cannot be linked publicly. This feature does not upload or author material, grant paid access, enroll students or activate APPX courses.
+Private Admin preview notes cannot be linked publicly. This feature does not upload or author material, grant paid access or activate APPX courses. Manual website enrolment records are managed separately; see `ENROLMENTS.md`.
 
 The API is `/api/admin/resources`. `scripts/prepare-portal.mjs` generates the resource metadata from the existing source catalogue. The generated metadata has only IDs, titles, types and internal routes; it is ignored in Git and regenerated before tests/builds.
 
