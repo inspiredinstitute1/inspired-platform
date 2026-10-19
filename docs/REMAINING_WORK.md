@@ -14,6 +14,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Course-scoped faculty grants, audited enable/revoke and a private read-only teaching workspace; base roles remain Admin/Student.
 - Public social footer with validated published-only feed. No actual destinations imported or ownership verified in this work.
 - Community group/membership records, finance validation preview and retry-safe JSON/CSV payment-import staging. Imported rows remain unverified; none verifies real payments or external membership automatically.
+- Admin manual learner/programme matching and evidence-reference review for accepted staged payments, with pending/reviewed/disputed states and atomic audit. Reviewed remains unverified.
 - Progress/scoring/PWA/privacy regression coverage, build, type checking, lint and isolated local D1 migration validation.
 
 ## Feature work remaining
@@ -23,11 +24,11 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 | Faculty | Direct editing of existing shared/Admin notes and broader faculty workflows. Opt-in own-note drafting/submission and Admin review are implemented; public publishing, finance and owner controls remain Admin-only. |
 | Learning material | Other file formats, larger-file/revision workflows, pagination and full-text/PDF-content indexing. Unified metadata search, bookmarks and completion are implemented. Plain-text notes and PDF uploads, review/publication, storage and programme attachment are implemented. |
 | Paid/private access | Evidence-backed paid entitlements, private delivery and server-authoritative premium testing. Existing public free resources cannot be made private merely by revoking an enrolment. APPX remains separate. |
-| Finance | Provider-format mapping/integrations, evidence review, saved learner/course matching, reviewed ledger approval, tuition/activation matching without double counting, fees/refunds/settlements, summaries and exports. Normalized JSON/CSV import staging and preview are implemented; staged rows remain unverified. |
+| Finance | Provider-format mapping/integrations, independent evidence verification, reviewed ledger approval, tuition/activation matching without double counting, fees/refunds/settlements, summaries and exports. Normalized JSON/CSV import staging and preview are implemented; staged rows remain unverified. Manual saved learner/programme matching and evidence-reference review are implemented. |
 | Community | Confirmed learner/account/payment mappings, consented external identifiers, manual import/review, discrepancy reports and supported integrations. No assumed universal WhatsApp roster API or automatic removals. |
 | Navigation and controls | Complete dynamic navigation, whole-feature enable/disable controls and larger-catalogue search/filtering. Programme status currently controls programme discovery only. |
 | Analytics | Deeper mastery/error revision, item-quality and batch reports, with valid cohort rules and preserved original attempts. |
-| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; audit/versioning for social links, community and future finance writes. Programme/resource/enrolment/faculty/material/proposal and submission-permission/PDF audits already exist. |
+| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; audit/versioning for social links, community and future ledger writes. Import/review audits and programme/resource/enrolment/faculty/material/proposal and submission-permission/PDF audits already exist. |
 
 ## Verification and release work remaining
 
@@ -38,4 +39,4 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.
 
-Suggested next implementation: learner/course matching and evidence review for staged imports, followed by an explicit ledger-approval workflow. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.
+Suggested next implementation: design an explicit ledger-approval workflow with independent evidence checks, activation/tuition matching and reversal rules before implementing any revenue posting. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.

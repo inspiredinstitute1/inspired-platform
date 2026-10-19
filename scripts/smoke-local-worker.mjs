@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -336,6 +336,21 @@ try {
     const csvBatch=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),format:'csv',data:csv},201);assert.equal(csvBatch.acceptedRows,1);assert.equal(csvBatch.rejectedRows,1);
     const many=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),data:JSON.stringify(Array.from({length:200},(_,index)=>({...importRow,externalReference:'BULK-SYNTHETIC-'+index})))},201);assert.equal(many.acceptedRows,200);assert.equal((await api('/api/admin/finance-imports?batchId='+many.batchId,'owner')).rows.length,200);
     await api('/api/admin/finance-imports','student','POST',importBody,403);await api('/api/admin/finance-imports','owner','POST',importBody,403,'https://other.example.test');await api('/api/admin/finance-imports','owner','DELETE',{},405);
+    const beforeReviewAccess=await api('/api/enrolments','student');
+    const reviewInput={rowId:imported.batchId+':1',version:0,learnerId:'synthetic-student',nodeId:enrolledCourse.id,status:'reviewed',evidenceReference:'SYNTHETIC-EVIDENCE-ONLY',evidenceNotes:'Synthetic evidence reference, not real payment proof',reason:'Exercise saved matches'};
+    const untouched=await api('/api/admin/finance-review?batchId='+imported.batchId,'owner');assert.equal(untouched.rows.length,2);assert(untouched.rows.every(row=>row.learnerId===null&&row.version===0));assert(!untouched.learners.some(row=>row.id==='synthetic-owner'));
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,learnerId:'synthetic-owner'},400);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:imported.batchId+':2'},400);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:imported.batchId+':3'},400);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,nodeId:division.id},400);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,evidenceReference:''},400);
+    assert.equal((await api('/api/admin/finance-review','owner','POST',reviewInput,201)).version,1);
+    await api('/api/admin/finance-review','owner','POST',reviewInput,409);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,version:1,status:'disputed',evidenceNotes:'Synthetic mismatch found',reason:'Reopen synthetic evidence'},200);
+    const reviewed=await api('/api/admin/finance-review?batchId='+imported.batchId,'owner');assert.equal(reviewed.audit.length,2);assert.equal(reviewed.rows[0].status,'disputed');assert.equal(reviewed.rows[0].version,2);assert.equal(reviewed.verification,'unverified');assert.equal(JSON.parse(reviewed.audit[0].previousJson).status,'reviewed');
+    await api('/api/admin/finance-review','student','POST',reviewInput,403);await api('/api/admin/finance-review','owner','POST',reviewInput,403,'https://other.example.test');await api('/api/admin/finance-review','owner','DELETE',{},405);
+    assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 manual learner/programme matching, evidence history, review conflicts and unchanged Student access');
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
