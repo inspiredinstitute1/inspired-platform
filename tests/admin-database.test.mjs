@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {socialLinksEndpoint} from '../lib/social-links-service.mjs';
 import {communityEndpoint} from '../lib/community-service.mjs';
 
-const migrations=['drizzle/0000_far_dust.sql',...['0001_social_links','0002_community_membership','0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links'].map(n=>`docs/migrations/${n}.sql`)];
+const migrations=['drizzle/0000_far_dust.sql',...['0001_social_links','0002_community_membership','0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots'].map(n=>`docs/migrations/${n}.sql`)];
 function setup(){
  const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
  for(const path of migrations)db.exec(readFileSync(path,'utf8'));

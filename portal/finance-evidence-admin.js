@@ -19,6 +19,7 @@ async function saveFinanceEvidence(form){return withAdminForm(form,async()=>{
  const message=document.getElementById('finance-evidence-message'),batchId=financeEvidenceData?.batch?.id,body={};for(const key of ['rowId','status','method','notes','reason'])body[key]=form.elements[key].value;for(const key of ['version','reviewVersion'])body[key]=Number(form.elements[key].value);body.attested=body.status==='confirmed'&&form.elements.attested.checked;
  try{
   const response=await fetch('/api/admin/finance-evidence',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw Error(data.error||'Evidence decision could not be saved.');if(!form.isConnected)return;
+  if(typeof invalidateFinanceApprovalCandidate==='function')invalidateFinanceApprovalCandidate();
   if(typeof invalidateFinanceLedgerPreview==='function')invalidateFinanceLedgerPreview('Saved finance records changed. Run the ledger preview again.');
   const loaded=await loadFinanceEvidence(batchId,body.rowId);if(!loaded)return;const current=document.getElementById('finance-evidence-message');if(current)current.textContent='Admin decision saved for this review version. Provider verification is not automated; posting and access remain disabled.';const preview=document.getElementById('finance-ledger-results');if(preview)preview.textContent='Evidence decision changed. Run the ledger preview again.';
  }catch(error){if(form.isConnected)message.textContent=error.message;}

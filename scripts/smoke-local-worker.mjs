@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -407,6 +407,24 @@ try {
     const crossPreview=await api(previewPath,'owner','POST',crossPreviewBody);assert.equal(crossPreview.blockedCount,2);assert.equal(crossPreview.contextTargets.length,1);assert.equal(crossPreview.contextTargets[0].receiptsCounted,false);assert.equal(crossPreview.totals.tuitionGrossPaise,-5000);assert.equal(crossPreview.totals.cashNetPaise,-4000);assert.equal(crossPreview.totalsScope,'selected_batch_movement');assert.equal(crossPreview.otherBatchReservations[0].refundPaise,4000);assert.equal(crossPreview.canPost,false);
     await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:reversalBatch.batchId+':1',version:1,reason:'Invalidate cross-batch context review'});const crossStale=await api(linkPath+'?batchId='+crossBatch.batchId,'owner');assert.equal(crossStale.rows[0].effectiveState,'stale');assert.equal((await api(previewPath,'owner','POST',crossPreviewBody)).totals.cashNetPaise,0);assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS D1 exact cross-batch target lookup, global activation/refund caps, prior receipts excluded, negative batch movement and external-review staleness');
+    const approvalPath='/api/admin/finance-approvals';
+    const approvalBatch=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),sourceLabel:'Synthetic approval-only export',data:JSON.stringify([{...importRow,externalReference:'APPROVAL-RUNTIME-T',grossPaise:10000,feePaise:0,netPaise:10000},{...importRow,source:'appx',externalReference:'APPROVAL-RUNTIME-A',transactionKind:'activation',grossPaise:1500,feePaise:500,netPaise:1000}])},201);
+    for(const number of [1,2])await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:approvalBatch.batchId+':'+number,reason:'Review synthetic approval source'},201);
+    await api(linkPath,'owner','POST',{rowId:approvalBatch.batchId+':2',targetRowId:approvalBatch.batchId+':1',sourceReviewVersion:1,targetReviewVersion:1,version:0,status:'active',reason:'Bind synthetic approval relationship'},201);
+    const blockedApproval=await api(approvalPath+'?batchId='+approvalBatch.batchId,'owner');assert.equal(blockedApproval.candidate.eligibleForReviewApproval,false);
+    const heldBody={requestId:crypto.randomUUID(),batchId:approvalBatch.batchId,scopeHash:blockedApproval.candidate.scopeHash,decision:'held',attested:false,reason:'Synthetic evidence still pending'};await api(approvalPath,'owner','POST',{...heldBody,requestId:crypto.randomUUID(),decision:'review_approved',attested:true},400);await api(approvalPath,'owner','POST',heldBody,201);
+    for(const number of [1,2])await api(evidencePath,'owner','POST',{...evidenceInput,rowId:approvalBatch.batchId+':'+number,reviewVersion:1,reason:'Confirm synthetic captured evidence'},201);
+    const approvalCandidate=await api(approvalPath+'?batchId='+approvalBatch.batchId,'owner');assert(approvalCandidate.candidate.eligibleForReviewApproval);assert.equal(approvalCandidate.snapshots[0].effectiveState,'stale');assert.equal(approvalCandidate.candidate.preview.totals.cashNetPaise,11000);
+    const approveBody={...heldBody,requestId:crypto.randomUUID(),scopeHash:approvalCandidate.candidate.scopeHash,decision:'review_approved',attested:true,reason:'Approve synthetic captured review only'};
+    const approvedSnapshot=await api(approvalPath,'owner','POST',{...approveBody,actorId:'spoof',scopeJson:'FORGED'},201);assert.equal(approvedSnapshot.canPost,false);assert.equal(approvedSnapshot.verification,'unverified');assert((await api(approvalPath,'owner','POST',approveBody)).idempotentReplay);await api(approvalPath,'owner','POST',{...approveBody,reason:'Different input under same ID'},409);
+    const capturedApproval=await api(approvalPath+'?snapshotId='+approvedSnapshot.id,'owner');assert.equal(capturedApproval.snapshot.actorId,'synthetic-owner');assert.equal(capturedApproval.snapshot.effectiveState,'review_approved');assert.equal(JSON.parse(capturedApproval.snapshot.scopeJson).rows.length,2);assert.equal(JSON.parse(capturedApproval.snapshot.previewJson).totals.cashNetPaise,11000);
+    const approvalPeer=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),sourceLabel:'Synthetic external approval peer',data:JSON.stringify([{...importRow,externalReference:'APPROVAL-PEER-R',transactionKind:'refund',grossPaise:1000,feePaise:0,netPaise:1000}])},201);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:approvalPeer.batchId+':1',reason:'Review synthetic peer commitment'},201);await api(linkPath,'owner','POST',{rowId:approvalPeer.batchId+':1',targetRowId:approvalBatch.batchId+':1',sourceReviewVersion:1,targetReviewVersion:1,version:0,status:'active',reason:'Reserve synthetic external refund'},201);
+    const staleApproval=await api(approvalPath+'?snapshotId='+approvedSnapshot.id,'owner');assert.equal(staleApproval.snapshot.effectiveState,'stale');assert.equal(staleApproval.snapshot.scopeJson,capturedApproval.snapshot.scopeJson);await api(approvalPath,'owner','POST',{...approveBody,requestId:crypto.randomUUID()},409);
+    const approvalHistory=await api(approvalPath+'?batchId='+approvalBatch.batchId,'owner');assert.equal(approvalHistory.snapshots.length,2);assert.equal(approvalHistory.audit.length,2);assert.equal(approvalHistory.canPost,false);
+    await api(approvalPath,'student','POST',approveBody,403);await api(approvalPath,'owner','POST',approveBody,403,'https://other.example.test');await api(approvalPath,'owner','DELETE',{},405);assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 immutable approval-review snapshots, hold/approve, server scope, idempotent replay, peer invalidation, retained audit and disabled posting/access');
+
 
 
 

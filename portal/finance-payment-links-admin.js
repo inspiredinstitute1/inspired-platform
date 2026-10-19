@@ -25,6 +25,7 @@ async function saveFinancePaymentLink(form){return withAdminForm(form,async()=>{
  const message=document.getElementById('finance-payment-link-message'),batchId=financePaymentLinksData?.batch?.id,body={};for(const key of ['rowId','targetRowId','status','reason'])body[key]=form.elements[key].value;for(const key of ['version','sourceReviewVersion'])body[key]=Number(form.elements[key].value);body.targetReviewVersion=form.targetReviewVersions?.[body.targetRowId]||0;
  try{
   const response=await fetch('/api/admin/finance-payment-links',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw Error(data.error||'Payment link could not be saved.');if(!form.isConnected)return;
+  if(typeof invalidateFinanceApprovalCandidate==='function')invalidateFinanceApprovalCandidate();
   if(typeof invalidateFinanceLedgerPreview==='function')invalidateFinanceLedgerPreview('Saved finance records changed. Run the ledger preview again.');
   const loaded=await loadFinancePaymentLinks(batchId,body.rowId);if(!loaded)return;const current=document.getElementById('finance-payment-link-message');if(current)current.textContent='Saved link updated. Payments remain unverified; posting and access are unchanged.';const results=document.getElementById('finance-ledger-results');if(results)results.textContent='Saved link changed. Run the ledger preview again.';
  }catch(error){if(form.isConnected)message.textContent=error.message;}
