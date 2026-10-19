@@ -20,6 +20,8 @@ Runtime secret values, learner records and checkout-local settings are excluded.
 
 ## Source and validation
 
+For the development-only PR #3 checks, commands and remaining release gaps, see [PR3 development validation](docs/PR3_DEVELOPMENT_VALIDATION.md).
+
 Learning UI and content are in portal/. scripts/prepare-portal.mjs creates the shell, assets, client bundle and scoring catalogue. Request handlers are in app/api/, progress validation in lib/progress-service.mjs, and the generated D1 migration in drizzle/.
 
 With Node 22.13 or newer:

@@ -6,7 +6,7 @@ export const dynamic='force-dynamic';
 export async function POST(request:Request){
  const user=await getChatGPTUser();
  const headers={'content-type':'application/json','cache-control':'private, no-store'};
- const respond=(body,status=200)=>new Response(JSON.stringify(body),{status,headers});
+ const respond=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers});
  if(roleFor(user,env)!=='Admin')return respond({error:'Admin access required.'},403);
  if(request.headers.get('origin')!==new URL(request.url).origin)return respond({error:'Invalid request origin.'},403);
  if(!request.headers.get('content-type')?.startsWith('application/json'))return respond({error:'JSON required.'},415);

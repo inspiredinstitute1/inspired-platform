@@ -62,3 +62,5 @@ next-env.d.ts
 /public/style.css
 /public/theme.css
 /public/assets/
+
+*.tsbuildinfo

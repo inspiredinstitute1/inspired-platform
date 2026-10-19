@@ -14,7 +14,10 @@
     "db:generate": "drizzle-kit generate",
     "test:security": "node scripts/prepare-portal.mjs && node --test tests/admin-community-security.test.mjs",
     "test:finance": "node --test tests/finance-reconciliation.test.mjs",
-    "test:all": "node scripts/prepare-portal.mjs && node --test tests/*.test.mjs"
+    "test:all": "node scripts/prepare-portal.mjs && node --test tests/*.test.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:db:local": "node scripts/validate-local-d1.mjs",
+    "test:runtime:local": "node scripts/smoke-local-worker.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
