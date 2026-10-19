@@ -1,4 +1,4 @@
-# InspirED 3.0 — remaining work, 19 October 2026
+# InspirED 3.0 — remaining work, 20 October 2026
 
 All recent changes remain on draft PR #3. Working in development does not mean deployed, browser-verified or ready for release. No hours-based or formally weighted completion percentage is tracked.
 
@@ -20,6 +20,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Saved same-batch/cross-batch activation/refund links bind both exact review versions, retain corrections/revocation and audit, enforce competing-activation/refund limits and feed a separately labelled saved-mode preview. Exact-reference lookup and global commitment limits support separate exports; context receipts are excluded from selected-batch movements. Stale links are excluded; posting remains disabled.
 - Immutable approval-review snapshots bind accepted source/target reviews, evidence, links, relevant peer commitments, identities/programmes and ledger matches. Stale/restoration protection, superseding holds, atomic audit and retry-safe capture are implemented; they do not authorize posting.
 - Local-only synthetic journal rehearsal with atomic entry/audit writes, duplicate prevention, captured-scope/latest-decision checks and compensating reversals. It uses separate tables, is disabled by default and does not implement real posting or independent verification.
+- Independent-verification request intake tied to exact current review approvals, with frozen expected claims, dispute/cancellation history and stale/superseded binding detection. No provider adapter is configured; this does not authenticate evidence or enable real posting.
 - Progress/scoring/PWA/privacy regression coverage, build, type checking, lint and isolated local D1 migration validation.
 
 ## Feature work remaining
@@ -44,4 +45,4 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.
 
-Suggested next implementation: a trusted, versioned independent-evidence workflow for each payment channel, with exact event binding and dispute/staleness handling. The local synthetic journal now rehearses posting/reversal mechanics; real posting remains blocked. See FINANCE_REHEARSAL_JOURNAL.md for the proposed acceptance requirements. Immutable review snapshots are implemented but are not posting permissions. The current selected-batch movement preview deliberately cannot approve or post payments. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.
+Suggested next implementation: a trusted provider adapter or explicitly agreed independent manual workflow that authenticates exact payment evidence and binds it to the retained expected claims. Request intake, dispute/cancellation and stale binding history are implemented; independent evidence itself remains unavailable. See FINANCE_VERIFICATION_REQUESTS.md. The local synthetic journal now rehearses posting/reversal mechanics; real posting remains blocked. See FINANCE_REHEARSAL_JOURNAL.md for the proposed acceptance requirements. Immutable review snapshots are implemented but are not posting permissions. The current selected-batch movement preview deliberately cannot approve or post payments. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.

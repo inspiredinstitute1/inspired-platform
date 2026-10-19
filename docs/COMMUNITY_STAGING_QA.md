@@ -22,3 +22,7 @@ Production is Sites-hosted (Vinext Worker + D1). Do **not** run these statements
 ## Synthetic journal rehearsal boundary
 
 Migration 0017 adds a separate local-only synthetic journal, not a real ledger. Keep FINANCE_REHEARSAL_MODE unset in hosted environments. Rehearsal rows must never enter verified revenue/access checks or be promoted into production. Local tests cover atomic capture/reversal and journal commitments; independent provider evidence and real posting remain pending. See FINANCE_REHEARSAL_JOURNAL.md.
+
+## Independent-verification request intake
+
+Migration 0018 adds Admin intake with immutable expected claims and append-only dispute/cancellation events. Queue requests do not authenticate provider evidence, post payments or establish paid membership. Provider adapters remain unconfigured. Do not infer external membership or remove users from requests/approvals. See FINANCE_VERIFICATION_REQUESTS.md.

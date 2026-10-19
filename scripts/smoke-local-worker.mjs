@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -445,6 +445,18 @@ try {
     await api(rehearsalPath,'owner','POST',{...journalReverse,requestId:crypto.randomUUID()},409);await api(rehearsalPath,'owner','POST',journalBody,403,'https://other.example.test');await api(rehearsalPath,'owner','DELETE',{},405);
     assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS local synthetic rehearsal journal: atomic entries/audit, separate activation receipts, replay recovery, exact reversal and unchanged access');
+
+    const verificationPath='/api/admin/finance-verification';
+    const verificationQueue=await api(verificationPath+'?batchId='+rehearsalBatch.batchId,'owner');assert.equal(verificationQueue.requestableApprovalId,journalApproval.id);assert.equal(verificationQueue.providerAdaptersConfigured,false);
+    const verificationBody={requestId:crypto.randomUUID(),action:'request',approvalId:journalApproval.id,reason:'Synthetic independent evidence request'};
+    const verificationTask=await api(verificationPath,'owner','POST',{...verificationBody,providerAuthenticated:true,actorId:'spoof'},201);assert.equal(verificationTask.canPost,false);assert.equal(verificationTask.status,'awaiting_provider');assert((await api(verificationPath,'owner','POST',verificationBody)).idempotentReplay);
+    const verificationDetail=await api(verificationPath+'?taskId='+verificationTask.id,'owner');assert.equal(verificationDetail.task.actorId,'synthetic-owner');assert.equal(JSON.parse(verificationDetail.task.expectedJson).items.length,2);assert.equal(JSON.parse(verificationDetail.task.expectedJson).providerAuthenticated,false);assert.equal(verificationDetail.events.length,1);
+    await api(verificationPath,'owner','POST',{...verificationBody,requestId:crypto.randomUUID()},409);await api(verificationPath,'owner','POST',{...verificationBody,requestId:crypto.randomUUID(),action:'verify'},400);
+    await api(approvalPath,'owner','POST',{...approveBody,requestId:crypto.randomUUID(),batchId:rehearsalBatch.batchId,scopeHash:journalCandidate.candidate.scopeHash,decision:'held',attested:false,reason:'Synthetic later hold blocks binding'},201);assert.equal((await api(verificationPath+'?taskId='+verificationTask.id,'owner')).task.bindingState,'superseded');
+    const verificationDispute={requestId:crypto.randomUUID(),action:'dispute',taskId:verificationTask.id,version:1,reason:'Synthetic unconfirmed provider evidence'};await api(verificationPath,'owner','POST',verificationDispute,201);assert((await api(verificationPath,'owner','POST',verificationDispute)).idempotentReplay);
+    await api(verificationPath,'owner','POST',{...verificationDispute,requestId:crypto.randomUUID(),action:'cancel',version:1},409);await api(verificationPath,'owner','POST',{...verificationDispute,requestId:crypto.randomUUID(),action:'cancel',version:2},201);const verificationClosed=await api(verificationPath+'?taskId='+verificationTask.id,'owner');assert.equal(verificationClosed.task.status,'cancelled');assert.equal(verificationClosed.events.length,3);assert.equal(verificationClosed.verification,'unverified');
+    await api(verificationPath,'owner','POST',verificationBody,403,'https://other.example.test');await api(verificationPath,'owner','DELETE',{},405);assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 independent-verification request queue: exact expected claims, no provider authentication, retry/audit preservation, hold supersession, disputes and cancellation');
 
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');

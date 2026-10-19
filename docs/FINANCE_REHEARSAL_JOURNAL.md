@@ -50,3 +50,5 @@ These are proposed engineering acceptance requirements, not a claim of available
 ## Validation
 
 Seventeen service/database tests cover local gating, authorization/origin/bounds, server-derived facts, tuition/mock/activation/refund movements, exact compensating reversal, retry recovery including a concurrent identical command, duplicate prevention, holds/staleness/restoration, atomic scope/decision races, failed-entry/audit rollback, cross-batch dependencies, persistent commitment caps, immutable history and migration reapplication. The full suite has 235 passing tests. Local D1 validates seventeen explicit migrations and retains synthetic posting/reversal/audit rows on reapplication. Built Worker/local D1 checks exercise the endpoint with disposable fixtures. Provider-authenticated sessions and browser/mobile behavior remain unverified.
+
+Independent-verification request intake is now available in development (FINANCE_VERIFICATION_REQUESTS.md). It freezes expected claims and retains dispute/cancellation history; no provider adapter is configured and the rehearsal journal never treats its requests as verified evidence.
