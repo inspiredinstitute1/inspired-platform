@@ -8,13 +8,13 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 58 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 67 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
-| `npm run build` | Passed all five Vinext/Vite build stages and emitted all thirteen application routes. This builds artifacts without publishing them. |
-| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all six admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
-| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all seven admin APIs and the progress API were rejected with private/no-store responses. |
+| `npm run build` | Passed all five Vinext/Vite build stages and emitted all fifteen application routes. This builds artifacts without publishing them. |
+| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all seven admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
+| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all eight admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
 | `git diff --check` | Passed. |
 
@@ -31,7 +31,7 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - Applied existing form-field styling and larger mobile text to all three Admin managers; added scoped field widths, textarea styling, focus outlines, checkbox layout and wrapping for long URLs/buttons, using both theme palettes.
 - Guarded social/community form saves against repeated submission while pending; original disabled states are restored on success or failure.
 - Clearing a finance preview now aborts its request and ignores late responses, including when a new preview has already started. Malformed arrays and more than 200 rows are rejected before sending.
-- Social link records now say Enabled/Disabled rather than implying publication; the public feed remains incomplete.
+- Social link records use Enabled/Disabled; the public feed milestone below now publishes eligible enabled records.
 - Added four frontend state regression tests using a small in-memory test harness. They are unit tests, not real-browser layout or accessibility validation. The generated portal bundle also passes `node --check public/portal.bundle.js`.
 
 ## Programme manager milestone
@@ -42,8 +42,8 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - `/api/catalogue` exposes only published records under fully published ancestor paths. The homepage's Explore programmes section uses this feed; no programme records are seeded or enabled automatically.
 - Pausing/archiving an ancestor hides the branch without modifying descendants or learner progress. Republishing restores descendants that still have Published status.
 - Added nine regression tests (seven service/database tests and two form-state tests), plus built Worker/local D1 checks for publication, hiding/restoration, audit, permissions, conflicts and Kannada descriptions.
-- Local D1 validation now applies the base plus six migrations and confirms that migration reapplication preserves both programme and audit records.
-- Programme listings do not author learning resources, activate paid access or create faculty permissions. Website enrolment records are now available through the separate enrolment manager. Global navigation and the existing free-resource catalogue remain separate. Browser interaction is still unverified.
+- Local D1 validation now applies the base plus seven migrations and confirms that migration reapplication preserves both programme and audit records.
+- Programme listings do not author learning resources, activate paid access or create faculty permissions (managed separately). Website enrolment records are now available through the separate enrolment manager. Global navigation and the existing free-resource catalogue remain separate. Browser interaction is still unverified.
 
 ## Programme resource-linking milestone
 
@@ -52,7 +52,7 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - Public programme discovery includes ordered resource buttons only for enabled links under fully published ancestor paths. Hiding a link or programme does not remove resources from the existing free library.
 - Link identity is fixed after creation. Edits use optimistic versions; duplicate associations are rejected. Disabling retains records. Database triggers atomically append audit snapshots, and protect links/audit from physical deletion or audit tampering.
 - Added six service/database regressions and built Worker/local D1 integration checks covering permissions, duplicates, stale edits, ordering, private-preview rejection, hidden branches and record preservation. Base plus six explicit migrations passed reapplication checks, including resource-link/audit rows.
-- Programme linking is implemented for the existing free catalogue. Uploading or authoring new material, private/premium website delivery, verified paid entitlements and faculty workflows remain pending.
+- Programme linking is implemented for the existing free catalogue. Uploading or authoring new material, private/premium website delivery, verified paid entitlements and faculty authoring workflows remain pending.
 
 ## Website enrolment milestone
 
@@ -72,6 +72,15 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - Footer links escape labels, protect new tabs and suppress referrers. The public request omits credentials; stale responses cannot restore links after a newer empty result. Unavailable/empty feeds hide the footer section.
 - Six new tests cover destination rules, legacy/hidden exclusion, projection/order, publish validation, HTML/navigation safety and stale responses. Built Worker/local D1 checks cover publication, exclusion and immediate removal.
 - Review all previously enabled records for public intent before release, especially community invitation URLs. Social-link audit/versioning and actual browser interaction remain pending.
+
+## Course-scoped faculty milestone
+
+- Admin can assign saved non-Admin accounts to courses, enable or disable access, and review append-only assignment history. New assignments default to disabled; changes require a reason and version check.
+- Admin and Student remain the only base roles. Teaching access is a separate server-checked capability, with no Admin, finance, permission-management or unrelated-course access.
+- The private read-only teaching workspace shows assigned courses and descendants, including drafts for review, linked free materials and active course enrolment counts. It returns no student roster, contact information or payment records.
+- Every read scopes by trusted session identity. Grants are checked again before returning results so a mid-read revocation suppresses course data. Navigation may need a page refresh; API authorization is checked on every request.
+- Seven service/database tests and two form-state regressions cover scope, revocation, conflicts, audit integrity and role isolation. Built Worker/local D1 checks verify enable/revoke, session-scoped reads and rejection from all Admin APIs. The base plus seven explicit migrations preserve synthetic records when reapplied.
+- Faculty editing, uploads, publishing and learner management are not delegated. Actual provider sign-in and browser/mobile interaction remain unverified.
 
 ## Reproduce
 
@@ -93,6 +102,6 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 
 - Provider-authenticated Admin/Student browser sessions and mobile UI interaction remain unverified in this pass. Anonymous local HTTP checks and service-level identity simulations passed.
 - Clean cached dependency installation passed; an exact Node 22 run and fresh registry installation were not performed. Tests used Node 24.19.0.
-- Remote staging/production migrations were not run. The six admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
-- Existing incomplete features remain: audit logging outside programme/resource/enrolment managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
+- Remote staging/production migrations were not run. The seven admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
+- Existing incomplete features remain: audit logging outside programme/resource/enrolment/faculty managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
 - Keep this PR a draft. Production migration and release require owner approval and the separate staging/backup checks.

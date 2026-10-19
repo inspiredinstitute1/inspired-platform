@@ -164,3 +164,29 @@ test('enrolment form rejects invalid/reversed dates before serializing them as u
   }
   assert.equal(h.requests.length,0);assert.equal(h.fields.reason.disabled,false);
 });
+
+function facultyHarness(ok=true){
+  const values={id:'',version:'',facultyId:'synthetic-teacher',courseId:'00000000-0000-4000-8000-000000000001',enabled:'',reason:'Create disabled assignment'};
+  const fields=Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{value,disabled:false,checked:false}]));
+  const form=Object.assign(element(),{elements:fields,querySelectorAll:()=>Object.values(fields)}),message=element(),requests=[];
+  const context=load('admin-ui.js',{
+    document:{getElementById:id=>id==='faculty-assignment-message'?message:form},
+    fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return{ok,json:async()=>ok?{id:'00000000-0000-4000-8000-000000000002',version:(body.version||0)+1}:{error:'A newer version exists. Reload before editing.'}};},
+  });
+  vm.runInContext(readFileSync('portal/faculty-admin.js','utf8'),context);context.loadFacultyAdmin=async()=>{};
+  return{context,form,fields,message,requests};
+}
+
+test('faculty form defaults to disabled and enables through a versioned edit with fixed identity',async()=>{
+  const h=facultyHarness();await h.context.saveFacultyAssignment(h.form);assert.equal(h.requests[0].enabled,false);
+  assert(h.fields.facultyId.disabled);assert(h.fields.courseId.disabled);
+  h.fields.enabled.checked=true;h.fields.reason.value='Enable assigned course';await h.context.saveFacultyAssignment(h.form);
+  assert.equal(h.requests[1].enabled,true);assert.equal(h.requests[1].version,1);assert(h.requests[1].id);
+  assert.equal(h.requests[1].facultyId,h.requests[0].facultyId);assert.equal(h.fields.version.value,2);
+});
+
+test('faculty form conflict preserves the requested change and restores editable controls',async()=>{
+  const h=facultyHarness(false);h.fields.id.value='00000000-0000-4000-8000-000000000002';h.fields.version.value='1';h.fields.enabled.checked=true;
+  await h.context.saveFacultyAssignment(h.form);
+  assert.equal(h.fields.enabled.checked,true);assert.equal(h.fields.version.value,'1');assert.equal(h.fields.reason.value,'Create disabled assignment');assert.equal(h.fields.enabled.disabled,false);assert.match(h.message.textContent,/newer version/);
+});

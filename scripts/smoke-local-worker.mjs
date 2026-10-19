@@ -15,7 +15,7 @@ assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -49,7 +49,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/progress', '/api/enrolments', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/progress', '/api/enrolments', '/api/faculty', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -78,7 +78,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner');
     }
@@ -203,6 +203,31 @@ try {
     await api('/api/admin/enrolments','owner','DELETE',{id:enrolled.id},405);
     const roster=await api('/api/admin/enrolments','owner');assert.equal(roster.enrolments.length,1);assert.equal(roster.audit.length,4);assert(roster.learners.every(learner=>learner.id!=='synthetic-owner'));
     console.log('PASS D1 enrolment lifecycle, expiry, identity isolation, anti-self-approval and audit preservation');
+    await api('/api/admin/enrolments','owner','POST',{...enrolment,...enrolled,version:4,status:'active'});
+    const foreignCourse=await api('/api/admin/content','owner','POST',{...programme,kind:'course',parentId:division.id,title:'Unassigned private course',status:'draft'},201);
+    const assignment={courseId:enrolledCourse.id,facultyId:'synthetic-student',enabled:false,reason:'Synthetic faculty assignment'};
+    const grant=await api('/api/admin/faculty','owner','POST',assignment,201);
+    assert.equal((await api('/api/faculty','student')).courses.length,0);
+    await api('/api/admin/faculty','owner','POST',{...assignment,...grant,enabled:true});
+    let faculty=(await api('/api/faculty?courseId='+foreignCourse.id+'&facultyId=synthetic-other','student'));
+    assert.equal(faculty.courses.length,1);assert.equal(faculty.courses[0].id,enrolledCourse.id);assert.equal(faculty.courses[0].activeEnrolments,1);assert.equal(faculty.resources.length,1);
+    assert(faculty.nodes.every(node=>node.id!==foreignCourse.id&&node.id!==division.id));assert(!JSON.stringify(faculty).includes('learnerId'));
+    assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
+    let teacherPage=await(await get('/',{headers:identities.student})).text();
+    let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
+    await api('/api/faculty','student','POST',{},405);
+    await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
+    faculty=await api('/api/faculty','student');assert.equal(faculty.courses.length,0);assert.equal(faculty.resources.length,0);
+    teacherPage=await(await get('/',{headers:identities.student})).text();teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.teachingAccess,false);
+    await api('/api/admin/faculty','owner','POST',{...assignment,...grant,enabled:true},409);
+    await api('/api/admin/faculty','owner','POST',assignment,409);
+    await api('/api/admin/faculty','owner','POST',{...assignment,facultyId:'synthetic-owner'},400);
+    await api('/api/admin/faculty','owner','POST',assignment,403,'https://other.example.test');
+    await api('/api/admin/faculty','owner','DELETE',{id:grant.id},405);
+    const facultyRecords=await api('/api/admin/faculty','owner');assert.equal(facultyRecords.assignments.length,1);assert.equal(facultyRecords.audit.length,3);
+    console.log('PASS D1 faculty course scope, aggregates, capability flag, immediate revocation and unchanged Admin/Student roles');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {
