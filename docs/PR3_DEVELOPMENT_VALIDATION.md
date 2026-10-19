@@ -8,11 +8,11 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 52 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 58 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
-| `npm run build` | Passed all five Vinext/Vite build stages and emitted all twelve application routes. This builds artifacts without publishing them. |
+| `npm run build` | Passed all five Vinext/Vite build stages and emitted all thirteen application routes. This builds artifacts without publishing them. |
 | `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all six admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
 | `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all seven admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
@@ -64,6 +64,15 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - Added eight service/database tests and two form-state regressions. Built Worker/local D1 checks exercise approval, exact expiry, revocation, stale/duplicate rejection, Admin exclusion, anti-self-approval, cross-user isolation and audit preservation. Base plus six migrations preserve synthetic enrolment and audit rows on reapplication.
 - This is a website enrolment roster and personalised free-resource view. It is not payment verification, private/premium resource enforcement, APPX activation or external community entitlement.
 
+## Public social-links milestone
+
+- Added `/api/social-links` and a mobile-friendly public footer driven by Admin-saved enabled records. No real destinations were seeded or published live.
+- Publication requires a matching supported host for social platforms and HTTPS without credentials, nonstandard ports or local/IP destinations. Website links support other valid HTTPS domain names. Hidden drafts may retain a nonmatching platform destination, but cannot be published until corrected.
+- The public feed revalidates even legacy rows and exposes only platform, label and URL in Admin-selected order. It does not fetch destinations or establish channel ownership.
+- Footer links escape labels, protect new tabs and suppress referrers. The public request omits credentials; stale responses cannot restore links after a newer empty result. Unavailable/empty feeds hide the footer section.
+- Six new tests cover destination rules, legacy/hidden exclusion, projection/order, publish validation, HTML/navigation safety and stale responses. Built Worker/local D1 checks cover publication, exclusion and immediate removal.
+- Review all previously enabled records for public intent before release, especially community invitation URLs. Social-link audit/versioning and actual browser interaction remain pending.
+
 ## Reproduce
 
 Use Node 22.13 or newer with the locked dependencies installed. Then run:
@@ -85,5 +94,5 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 - Provider-authenticated Admin/Student browser sessions and mobile UI interaction remain unverified in this pass. Anonymous local HTTP checks and service-level identity simulations passed.
 - Clean cached dependency installation passed; an exact Node 22 run and fresh registry installation were not performed. Tests used Node 24.19.0.
 - Remote staging/production migrations were not run. The six admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
-- Existing incomplete features remain: published social-link feed, audit logging outside the programme manager, learner identity linkage, verified payment import/reconciliation and full-directory pagination. Synthetic membership/payment statuses do not verify real payments or grant external group access.
+- Existing incomplete features remain: audit logging outside programme/resource/enrolment managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
 - Keep this PR a draft. Production migration and release require owner approval and the separate staging/backup checks.

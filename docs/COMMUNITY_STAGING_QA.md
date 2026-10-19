@@ -9,7 +9,7 @@ Production is Sites-hosted (Vinext Worker + D1). Do **not** run these statements
 5. Test unauthenticated/student/owner requests with actual provider identity and confirm every admin API rejects unauthorized requests. Verify CSRF/origin checks, URL validation and no personal data in logs.
 6. Review whether a member can be identified with an internal student ID, not just a submitted arbitrary string. Do not treat `paid_active` as payment verification before reconciling with APPX/PhonePe records.
 7. Confirm API response pagination and loading/error states for larger membership collections. Current membership listing is limited to 500 and is not a complete-directory export.
-8. Verify public social links are rendered from a separate sanitized published-only feed before claiming they are live; admin-only API currently does not publish them.
+8. A sanitized published-only `/api/social-links` feed and public footer now exist in development. Verify actual destinations, public intent and browser rendering before release; no live publication is established by local tests.
 9. Confirm group membership checks and historical statuses do not automatically kick anyone out of WhatsApp/Telegram.
 10. Only after staging QA and explicit owner approval: schedule controlled production migration, monitor errors, and retain rollback/export.
 
@@ -17,4 +17,4 @@ Production is Sites-hosted (Vinext Worker + D1). Do **not** run these statements
 - Base and all six admin migrations passed isolated local D1 validation on 19 October 2026. Remote migrations and authenticated browser integration remain untested; see `PR3_DEVELOPMENT_VALIDATION.md`.
 - Existing Sites identity/admin model is in use; Firebase migration is *not* part of this milestone.
 - No real community, payment or social URLs have been imported.
-- Social Links public display, audit log, learner identity linkage, manual reconciliation and verified payment import are future work.
+- Social Links public display is implemented in development. Broader audit logging, verified learner/payment/community identity linkage, reconciliation and verified payment imports remain future work.

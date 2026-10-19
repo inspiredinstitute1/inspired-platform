@@ -74,6 +74,7 @@ try {
     for (const role of ['owner', 'student']) {
       const page = await get('/', { headers: identities[role] });
       const html = await page.text();
+      assert.match(html,/id="public-social-links"/);
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
@@ -97,10 +98,16 @@ try {
 
     const link = { platform: 'website', label: 'Synthetic local test', url: 'https://example.test', enabled: false, sortOrder: 1 };
     const created = await api('/api/admin/social-links', 'owner', 'POST', link, 201);
+    const publicLinks=async()=>{const response=await get('/api/social-links');assert.equal(response.status,200);assert.match(response.headers.get('cache-control')??'',/no-store/);return(await response.json()).links;};
+    assert.equal((await publicLinks()).length,0);
     await api('/api/admin/social-links', 'owner', 'POST', { ...link, id: created.id, enabled: true });
     assert.equal((await api('/api/admin/social-links', 'owner')).links[0].enabled, true);
+    const published=await publicLinks();assert.equal(published.length,1);assert.deepEqual(Object.keys(published[0]).sort(),['label','platform','url']);
+    await api('/api/admin/social-links','owner','POST',{...link,platform:'youtube',enabled:true},400);
     await api('/api/admin/social-links', 'owner', 'DELETE', { id: created.id });
     assert.equal((await api('/api/admin/social-links', 'owner')).links.length, 0);
+    assert.equal((await publicLinks()).length,0);
+    console.log('PASS public social publication, hidden drafts, destination rules and immediate removal');
     const group = await api('/api/admin/community', 'owner', 'POST', { action: 'createGroup', platform: 'telegram', title: 'Synthetic local group', programme: 'English', accessTier: 'premium_course' }, 201);
     await api('/api/admin/community', 'owner', 'POST', { action: 'setGroupEnabled', id: group.id, enabled: true });
     const member = { action: 'upsertMembership', groupId: group.id, learnerId: 'synthetic-student', membershipStatus: 'pending', paymentStatus: 'pending_verification' };
