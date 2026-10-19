@@ -347,3 +347,5 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
 @media(max-width:760px){.public-social-links .button{width:100%;font-size:17px}}
 @media(max-width:760px){.programme-materials .button{font-size:17px;line-height:1.6;width:100%}}
 @media(max-width:760px){.admin-manager .form-field,.admin-manager .small,.admin-checkbox-row{font-size:17px;line-height:1.7}.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{font-size:18px;min-height:50px}.admin-manager .hero-actions{align-items:stretch}.admin-manager .button{font-size:16px;line-height:1.5;max-width:100%}}
+
+.authored-note-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.125rem;line-height:1.8;margin-top:24px}

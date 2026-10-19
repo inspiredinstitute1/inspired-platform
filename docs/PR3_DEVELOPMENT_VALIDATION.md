@@ -8,13 +8,13 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 67 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 75 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
-| `npm run build` | Passed all five Vinext/Vite build stages and emitted all fifteen application routes. This builds artifacts without publishing them. |
-| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all seven admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
-| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all eight admin APIs and the progress API were rejected with private/no-store responses. |
+| `npm run build` | Passed all five Vinext/Vite build stages and emitted all seventeen application routes. This builds artifacts without publishing them. |
+| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all eight admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
+| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all nine admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
 | `git diff --check` | Passed. |
 
@@ -82,6 +82,15 @@ Additional in-memory SQLite tests exercise social-link create/read/update/delete
 - Seven service/database tests and two form-state regressions cover scope, revocation, conflicts, audit integrity and role isolation. Built Worker/local D1 checks verify enable/revoke, session-scoped reads and rejection from all Admin APIs. The base plus seven explicit migrations preserve synthetic records when reapplied.
 - Faculty editing, uploads, publishing and learner management are not delegated. Actual provider sign-in and browser/mobile interaction remain unverified.
 
+## Authored study-note milestone
+
+- Added an Admin editor for new English/Kannada plain-text notes, with title/category, up to 20,000 characters, change reasons and Draft, Review, Published and Archived states. Creation is draft-only; publication is a subsequent explicit edit. The route accepts up to 100 KB of UTF-8 JSON, supporting longer Kannada text.
+- Atomic audit triggers retain full before/after text and trusted actor identity. Optimistic versions reject stale edits; archive retains the note, existing programme links and append-only history. Admin history listings omit snapshot bodies while the database retains them.
+- `/api/materials` exposes only published metadata; detail reads expose only published note text. Draft/review/archived notes return 404 even for guessed IDs or requested status filters. The public reader escapes all text and ignores responses for detached readers after navigation. All reads use no-store; the service worker does not cache APIs.
+- The Free notes page now has a separate More free study notes section. Programme links can select authored drafts, but public discovery and enrolment/faculty resource views resolve them only while published. Existing free catalogue entries and private Admin previews are retained separately.
+- Five service/database tests and three frontend regressions cover privacy, publication/archive, origin and role checks, bounded input, conflicts, atomic audit rollback, safe rendering and late responses. Built Worker/local D1 checks verify long Kannada text and the full lifecycle through programme/enrolment/faculty projections. Base plus eight explicit migrations pass fresh application, reapplication and synthetic-record preservation checks.
+- Published notes are free to everyone independently of enrolments or teaching grants. Previously read text cannot be recalled. File/PDF uploads, rich-text editing, full-library search integration, bookmarks/completion for new notes and faculty authoring are still pending. Actual provider sign-in and browser/mobile interaction remain unverified.
+
 ## Reproduce
 
 Use Node 22.13 or newer with the locked dependencies installed. Then run:
@@ -102,6 +111,6 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 
 - Provider-authenticated Admin/Student browser sessions and mobile UI interaction remain unverified in this pass. Anonymous local HTTP checks and service-level identity simulations passed.
 - Clean cached dependency installation passed; an exact Node 22 run and fresh registry installation were not performed. Tests used Node 24.19.0.
-- Remote staging/production migrations were not run. The seven admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
-- Existing incomplete features remain: audit logging outside programme/resource/enrolment/faculty managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
+- Remote staging/production migrations were not run. The eight admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
+- Existing incomplete features remain: audit logging outside programme/resource/enrolment/faculty/material managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
 - Keep this PR a draft. Production migration and release require owner approval and the separate staging/backup checks.

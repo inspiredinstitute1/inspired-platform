@@ -7,6 +7,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Programme hierarchy, status/order controls, atomic audit and non-destructive archiving.
 - Links from programmes to existing free notes, videos and practice tests, with order/visibility and audit.
 - Manual website enrolments, expiry/revocation, trusted-account selection and private My programmes view. These are not paid entitlements.
+- Admin-authored plain-text study notes with draft/review/publish/archive, atomic audit, public reader and programme links.
 - Course-scoped faculty grants, audited enable/revoke and a private read-only teaching workspace; base roles remain Admin/Student.
 - Public social footer with validated published-only feed. No actual destinations imported or ownership verified in this work.
 - Community group/membership records and finance validation preview; neither verifies real payments or external membership automatically.
@@ -17,13 +18,13 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 | Area | Remaining result |
 | --- | --- |
 | Faculty | Authoring/edit delegation and review workflows. Audited owner-controlled grants and a read-only assigned-course dashboard are implemented; finance and owner controls remain Admin-only. |
-| Learning material | Author/upload new notes and other material, review/publish workflows, storage and programme attachment. Existing links only select from the current free catalogue. |
+| Learning material | File/PDF uploads, richer material formats, storage, and full-library search/bookmark/completion integration. Plain-text note authoring, review/publication and programme attachment are implemented. |
 | Paid/private access | Evidence-backed paid entitlements, private delivery and server-authoritative premium testing. Existing public free resources cannot be made private merely by revoking an enrolment. APPX remains separate. |
 | Finance | Authorized imports, persisted verified ledger, tuition/activation matching without double counting, fees/refunds/settlements, summaries and exports. Current tool is a preview only. |
 | Community | Confirmed learner/account/payment mappings, consented external identifiers, manual import/review, discrepancy reports and supported integrations. No assumed universal WhatsApp roster API or automatic removals. |
 | Navigation and controls | Complete dynamic navigation, whole-feature enable/disable controls and larger-catalogue search/filtering. Programme status currently controls programme discovery only. |
 | Analytics | Deeper mastery/error revision, item-quality and batch reports, with valid cohort rules and preserved original attempts. |
-| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; audit/versioning for social links, community and future finance writes. Programme/resource/enrolment/faculty audits already exist. |
+| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; audit/versioning for social links, community and future finance writes. Programme/resource/enrolment/faculty/material audits already exist. |
 
 ## Verification and release work remaining
 
@@ -34,4 +35,4 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.
 
-Suggested next implementation: material authoring with explicit faculty edit scope and review rules, then verified finance import. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.
+Suggested next implementation: faculty editing with explicit course scope and owner review rules, then file delivery and verified finance import. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.

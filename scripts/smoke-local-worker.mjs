@@ -15,7 +15,7 @@ assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -49,7 +49,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/progress', '/api/enrolments', '/api/faculty', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/progress', '/api/enrolments', '/api/faculty', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -78,7 +78,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner');
     }
@@ -215,7 +215,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -228,6 +228,31 @@ try {
     await api('/api/admin/faculty','owner','DELETE',{id:grant.id},405);
     const facultyRecords=await api('/api/admin/faculty','owner');assert.equal(facultyRecords.assignments.length,1);assert.equal(facultyRecords.audit.length,3);
     console.log('PASS D1 faculty course scope, aggregates, capability flag, immediate revocation and unchanged Admin/Student roles');
+    const authored={title:'Synthetic authored note',category:'Grammar',body:'ಕನ್ನಡ '.repeat(1000)+'<script>plain text only</script>',status:'draft',reason:'Create synthetic draft'};
+    const createdNote=await api('/api/admin/materials','owner','POST',authored,201);
+    const publicNote=async(id,status=200)=>{const response=await get('/api/materials'+(id?'?id='+encodeURIComponent(id):''));assert.equal(response.status,status);assert.match(response.headers.get('cache-control'),/no-store/);return response.json();};
+    assert.equal((await publicNote()).notes.length,0);await publicNote(createdNote.id,404);
+    await api('/api/admin/resources','owner','POST',{nodeId:enrolledCourse.id,kind:'note',resourceId:createdNote.id,enabled:true,sortOrder:2,reason:'Attach authored draft'},201);
+    assert(!(await publicMaterials()).some(item=>item.resourceId===createdNote.id));
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,status:'review'});await publicNote(createdNote.id,404);
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,version:2,status:'published'});
+    assert.equal((await publicNote(createdNote.id)).note.body,authored.body);assert.equal((await publicNote()).notes.length,1);
+    assert((await publicMaterials()).some(item=>item.resourceId===createdNote.id&&item.href==='#/material/'+createdNote.id));
+    assert((await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===createdNote.id));
+    await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:3,enabled:true});
+    assert((await api('/api/faculty','student')).resources.some(item=>item.resourceId===createdNote.id));
+    await api('/api/admin/materials','student','POST',{...authored,...createdNote},403);
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,version:3,status:'archived'});
+    await publicNote(createdNote.id,404);assert.equal((await publicNote()).notes.length,0);
+    assert(!(await publicMaterials()).some(item=>item.resourceId===createdNote.id));
+    assert(!(await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===createdNote.id));
+    assert(!(await api('/api/faculty','student')).resources.some(item=>item.resourceId===createdNote.id));
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,status:'published'},409);
+    await api('/api/admin/materials','owner','POST',authored,403,'https://other.example.test');
+    await api('/api/admin/materials','owner','DELETE',{id:createdNote.id},405);
+    const notesState=await api('/api/admin/materials','owner');assert.equal(notesState.notes.length,1);assert.equal(notesState.audit.length,4);
+    assert((await api('/api/admin/resources','owner')).links.some(item=>item.resourceId===createdNote.id));
+    console.log('PASS D1 authored-note draft/review/publication/archive, Kannada body size, enrolment/faculty/resource projection and retained audit');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {
