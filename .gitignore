@@ -64,3 +64,5 @@ next-env.d.ts
 /public/assets/
 
 *.tsbuildinfo
+
+/lib/resource-catalogue.json

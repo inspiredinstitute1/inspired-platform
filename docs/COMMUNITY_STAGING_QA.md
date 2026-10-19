@@ -14,7 +14,7 @@ Production is Sites-hosted (Vinext Worker + D1). Do **not** run these statements
 10. Only after staging QA and explicit owner approval: schedule controlled production migration, monitor errors, and retain rollback/export.
 
 ## Known incomplete items
-- Base and all four admin migrations passed isolated local D1 validation on 19 October 2026. Remote migrations and authenticated browser integration remain untested; see `PR3_DEVELOPMENT_VALIDATION.md`.
+- Base and all five admin migrations passed isolated local D1 validation on 19 October 2026. Remote migrations and authenticated browser integration remain untested; see `PR3_DEVELOPMENT_VALIDATION.md`.
 - Existing Sites identity/admin model is in use; Firebase migration is *not* part of this milestone.
 - No real community, payment or social URLs have been imported.
 - Social Links public display, audit log, learner identity linkage, manual reconciliation and verified payment import are future work.

@@ -13,12 +13,14 @@ This feature is on draft PR #3. It is not deployed to the live website.
 7. Pause or Archive to hide a record and its branch from Explore programmes. Records and previous learner progress remain intact. Republishing an ancestor restores descendants that are still Published.
 8. Expand **Recent programme changes** to view the latest 50 changes, with the actor, timestamp and reason. The database retains before/after snapshots for all changes.
 
+Use the Programme learning materials panel to link existing free notes, videos and tests; see `PROGRAMME_RESOURCES.md`.
+
 The programme list is empty initially. No sample programme is published automatically. Existing free notes, videos and practice tests remain available independently.
 
 ## Technical validation
 
 Explicit development migration: `docs/migrations/0004_content_manager.sql`.
-It is outside the generated Drizzle journal, like the three earlier Admin migrations. Apply the base and all four Admin SQL migrations only to an approved isolated target.
+It is outside the generated Drizzle journal, like the earlier Admin migrations. Apply the base and all five Admin SQL migrations only to an approved isolated target.
 
 Local checks:
 
@@ -36,7 +38,7 @@ The Admin API is `/api/admin/content`; public discovery uses `/api/catalogue`. P
 ## Remaining work
 
 - Real browser/mobile and provider-authenticated checks.
-- Connecting programme records to learning material, enrolments, faculty assignments and complete dynamic navigation.
+- Authoring new learning material, enrolments, faculty assignments and complete dynamic navigation.
 - Larger-catalogue pagination/search and richer audit inspection. The form currently lists all programme records.
 - Remote staging migration, backup/rollback verification and owner-approved release.
 

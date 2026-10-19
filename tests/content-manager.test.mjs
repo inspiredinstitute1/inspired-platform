@@ -7,7 +7,7 @@ import { contentEndpoint, catalogueEndpoint } from '../lib/content-service.mjs';
 const owner={userId:'synthetic-owner',email:'owner@example.test'};
 function setup(){
  const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
- for(const file of ['drizzle/0000_far_dust.sql','docs/migrations/0004_content_manager.sql'])db.exec(readFileSync(file,'utf8'));
+ for(const file of ['drizzle/0000_far_dust.sql','docs/migrations/0004_content_manager.sql','docs/migrations/0005_programme_resources.sql'])db.exec(readFileSync(file,'utf8'));
  const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){const r=statement.run(...values);return{meta:{changes:Number(r.changes)}}}});return wrap()}};
  const env={DB,PORTAL_ADMIN_EMAIL:owner.email};
  const request=(method,body,origin='https://local.test')=>new Request('https://local.test/api/admin/content',{method,headers:{origin,'content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});

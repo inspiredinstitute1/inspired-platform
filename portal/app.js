@@ -141,6 +141,8 @@ $('#menu').addEventListener('click',()=>{let open=$('#sidebar').classList.toggle
 window.addEventListener('hashchange',()=>{if(['notes','videos'].includes(route())){currentFilter='All';listQuery='';savedOnly=false;}render();});
 document.addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(!b)return;let {action,id,value}=b.dataset;
 if(action==='install-app')installPortalApp();
+if(action==='resource-link-edit')editResourceLink(id);
+if(action==='resource-link-reset')resetResourceLinkForm();
 if(action==='programme-edit')editProgramme(id);
 if(action==='programme-reset')resetProgrammeForm();
 if(action==='finance-clear')clearFinancePreview();
@@ -164,8 +166,8 @@ if(action==='complete-video'){if(!state.watched.includes(id)){state.watched.push
 });
 function updateList(){let base=route().split('/')[0];document.querySelectorAll('[data-action="filter"]').forEach(b=>{b.classList.toggle('active',b.dataset.value===currentFilter);b.setAttribute('aria-pressed',b.dataset.value===currentFilter);});let sb=$('[data-action="saved-only"]');if(sb){sb.classList.toggle('active',savedOnly);sb.setAttribute('aria-pressed',savedOnly);}$('#resource-results').innerHTML=base==='notes'?noteResults():videoResults();}
 document.addEventListener('input',e=>{if(e.target.id==='vocab-search'){$('#vocab-results').innerHTML=homophoneCards(e.target.value);}if(e.target.id==='filter-search'){listQuery=e.target.value;updateList();}});
-document.addEventListener('change',e=>{if(e.target.id==='programme-kind')updateProgrammeParents();if(e.target.id==='goal'){state.goal=Number(e.target.value);save();toast('Weekly goal updated. Small steps count.');}});
-document.addEventListener('submit',e=>{if(e.target.id==='programme-form'){e.preventDefault();saveProgramme(e.target);return;}if(e.target.id==='finance-preview-form'){e.preventDefault();previewFinance(e.target);return;}
+document.addEventListener('change',e=>{if(e.target.id==='resource-link-kind')updateResourceChoices();if(e.target.id==='programme-kind')updateProgrammeParents();if(e.target.id==='goal'){state.goal=Number(e.target.value);save();toast('Weekly goal updated. Small steps count.');}});
+document.addEventListener('submit',e=>{if(e.target.id==='resource-link-form'){e.preventDefault();saveResourceLink(e.target);return;}if(e.target.id==='programme-form'){e.preventDefault();saveProgramme(e.target);return;}if(e.target.id==='finance-preview-form'){e.preventDefault();previewFinance(e.target);return;}
 if(e.target.id==='community-group-form'){e.preventDefault();saveCommunityGroup(e.target);return;}
 if(e.target.id==='community-member-form'){e.preventDefault();saveCommunityMember(e.target);return;}
 if(e.target.id==='social-link-form'){e.preventDefault();saveSocialLink(e.target);return;}

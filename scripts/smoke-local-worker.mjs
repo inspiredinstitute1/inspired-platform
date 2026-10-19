@@ -1,6 +1,7 @@
 // Run only the built Worker locally, with disposable state and no real identity.
 import './sites-env.mjs';
 import assert from 'node:assert/strict';
+import resourceCatalogue from '../lib/resource-catalogue.json' with {type:'json'};
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
@@ -14,7 +15,7 @@ assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -48,7 +49,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/progress', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/progress', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -76,7 +77,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner');
     }
@@ -149,6 +150,28 @@ try {
     await api('/api/admin/content','owner','DELETE',{id:division.id},405);
     await api('/api/admin/content','owner','POST',programme,403,'https://other.example.test');
     console.log('PASS D1 programme hierarchy, publishing, pause/archive restoration, version conflicts and atomic audit');
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:5,status:'published'});
+    const materialLinks=[];
+    for(const [index,kind] of ['video','note','test'].entries()){
+      const resource=resourceCatalogue.find(item=>item.kind===kind);
+      const body={nodeId:division.id,kind,resourceId:resource.id,enabled:true,sortOrder:index,reason:'Link synthetic test to existing free resource'};
+      const created=await api('/api/admin/resources','owner','POST',body,201);materialLinks.push({...body,...created});
+      await api('/api/admin/resources','owner','POST',body,409);
+    }
+    const publicMaterials=async()=>{const response=await get('/api/catalogue');assert.equal(response.status,200);return(await response.json()).resources;};
+    assert.deepEqual((await publicMaterials()).map(item=>item.kind),['video','note','test']);
+    await api('/api/admin/resources','owner','POST',{...materialLinks[0],enabled:false});
+    assert.equal((await publicMaterials()).length,2);
+    await api('/api/admin/resources','owner','POST',{...materialLinks[0],enabled:true},409);
+    await api('/api/admin/resources','owner','POST',{...materialLinks[0],version:2,enabled:true});
+    assert.equal((await publicMaterials()).length,3);
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:6,status:'archived'});
+    assert.equal((await publicMaterials()).length,0);
+    const materialState=await api('/api/admin/resources','owner');assert.equal(materialState.links.length,3);assert.equal(materialState.audit.length,5);
+    await api('/api/admin/resources','owner','POST',{...materialLinks[0],resourceId:'preview-note-1792400000000'},400);
+    await api('/api/admin/resources','owner','POST',{},403,'https://other.example.test');
+    await api('/api/admin/resources','owner','DELETE',{id:materialLinks[0].id},405);
+    console.log('PASS D1 resource linking, ordering, duplicates, visibility, conflicts and history preservation');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {
