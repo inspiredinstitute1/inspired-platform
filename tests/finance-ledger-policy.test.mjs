@@ -13,7 +13,7 @@ test('saved pending/disputed matches, missing evidence and unavailable accounts/
 test('activation needs an APPX source and explicit same-learner/programme direct tuition target',()=>{
  for(const kind of ['mock_test','activation']){const result=previewLedger([payment('target',kind),payment('a','activation')],[link('a','target')]);assert(result.rows[1].blockers.includes('invalid_target_kind_or_source'));}
  for(const changes of [{learnerId:'other'},{nodeId:'other'}]){const result=previewLedger([payment('t'),{...payment('a','activation'),...changes}],[link('a','t')]);assert(result.rows[1].blockers.includes('target_match_mismatch'));}
- assert(previewLedger([payment('a','activation')]).rows[0].blockers.includes('target_required_in_selected_batch'));
+ assert(previewLedger([payment('a','activation')]).rows[0].blockers.includes('current_original_payment_link_required'));
  assert(previewLedger([payment('t'),payment('a','activation',{source:'phonepe'})],[link('a','t')]).rows[1].blockers.includes('activation_source_must_be_appx'));
  assert(previewLedger([payment('t','tuition',{source:'appx'}),payment('a','activation')],[link('a','t')]).rows[1].blockers.includes('invalid_target_kind_or_source'));
 });
@@ -41,4 +41,10 @@ test('existing transaction references block both the proposed sale and its depen
 });
 test('integer totals are exact and overflow is reported rather than rounded',()=>{
  const huge=Number.MAX_SAFE_INTEGER,result=previewLedger([payment('a','tuition',{grossPaise:huge,netPaise:huge}),payment('b','tuition',{grossPaise:1,netPaise:1})]);assert.equal(result.totals,null);assert.equal(result.totalsComplete,false);assert.equal(result.totalsError,'safe_integer_total_exceeded');
+});
+test('context originals validate dependent payments but never contribute their old cash receipts',()=>{
+ const target=payment('original'),refund=payment('refund','refund',{grossPaise:4000,netPaise:4000});const result=previewLedger([refund],[link('refund','original')],[],{contextRows:[target]});assert.equal(result.totals.tuitionGrossPaise,-4000);assert.equal(result.totals.cashNetPaise,-4000);assert.equal(result.rows.length,1);assert.equal(result.blockedCount,0);
+});
+test('global peer reservations constrain selected proposals and external target blockers propagate',()=>{
+ const rows=[payment('a','activation'),payment('r','refund',{grossPaise:40000,netPaise:40000})],links=[link('a','original'),link('r','original')],context={contextRows:[payment('original')],reservations:[{targetRowId:'original',activationCount:1,refundPaise:70000}]};const result=previewLedger(rows,links,[],context);assert.equal(result.blockedCount,2);assert(result.rows[0].blockers.includes('multiple_activations_require_review'));assert(result.rows[1].blockers.includes('refunds_exceed_original_gross'));assert.equal(result.totals.cashNetPaise,0);const blocked=previewLedger([rows[0]],[links[0]],[{source:'phonepe',externalReference:'original'}],{contextRows:[payment('original')]});assert(blocked.rows[0].blockers.includes('target_is_blocked'));
 });

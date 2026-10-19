@@ -156,6 +156,7 @@ if(action==='resource-link-edit')editResourceLink(id);
 if(action==='resource-link-reset')resetResourceLinkForm();
 if(action==='programme-edit')editProgramme(id);
 if(action==='programme-reset')resetProgrammeForm();
+if(action==='finance-payment-target-find'){const form=document.getElementById('finance-payment-link-form');if(form)findFinancePaymentTarget(form);}
 if(action==='finance-payment-link-open')reloadFinancePaymentLink(id);
 if(action==='finance-saved-ledger-preview'){const form=document.getElementById('finance-ledger-preview-form');if(form)previewSavedLedger(form,true);}
 if(action==='finance-evidence-open')openFinanceEvidence(id);
