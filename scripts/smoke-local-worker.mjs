@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -384,6 +384,20 @@ try {
     await api(evidencePath,'student','POST',evidenceInput,403);await api(evidencePath,'owner','POST',evidenceInput,403,'https://other.example.test');await api(evidencePath,'owner','DELETE',{},405);
     assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS D1 manual Admin evidence attestations, immutable snapshots, stale/reconfirmation/dispute lifecycle, audit and disabled posting/access');
+    const linkPath='/api/admin/finance-payment-links';
+    const linkInput={rowId:imported.batchId+':4',targetRowId:reviewInput.rowId,sourceReviewVersion:1,targetReviewVersion:4,version:0,status:'active',reason:'Save synthetic reviewed activation link'};
+    const savedPaymentLink=await api(linkPath,'owner','POST',{...linkInput,snapshotJson:'FORGED',changedBy:'spoof'},201);assert.equal(savedPaymentLink.version,1);assert.equal(savedPaymentLink.canPost,false);await api(linkPath,'owner','POST',linkInput,409);
+    let links=await api(linkPath+'?batchId='+imported.batchId,'owner');assert.equal(links.rows[1].effectiveState,'active');assert.equal(links.rows[1].link.changedBy,'synthetic-owner');assert.equal(JSON.parse(links.rows[1].link.snapshotJson).target.reviewVersion,4);assert.equal(links.audit.length,1);
+    const savedPreview={...previewInput,useSavedLinks:true,links:[],linkVersions:[{rowId:linkInput.rowId,version:1}]};const usingSaved=await api(previewPath,'owner','POST',savedPreview);assert.equal(usingSaved.linkMode,'saved');assert.equal(usingSaved.rows[1].savedLinkState,'active');assert.equal(usingSaved.totals.activationGrossPaise,1500);assert.equal(usingSaved.canPost,false);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,version:4,reason:'Test saved target version binding'});
+    links=await api(linkPath+'?batchId='+imported.batchId,'owner');assert.equal(links.rows[1].effectiveState,'stale');savedPreview.versions[0].version=5;const staleSaved=await api(previewPath,'owner','POST',savedPreview);assert.equal(staleSaved.rows[1].savedLinkState,'stale');assert.equal(staleSaved.totals.activationGrossPaise,0);
+    await api(linkPath,'owner','POST',{...linkInput,version:1},409);await api(linkPath,'owner','POST',{...linkInput,version:1,targetReviewVersion:5,status:'revoked'});await api(previewPath,'owner','POST',savedPreview,409);
+    savedPreview.linkVersions[0].version=2;assert.equal((await api(previewPath,'owner','POST',savedPreview)).rows[1].savedLinkState,'revoked');await api(linkPath,'owner','POST',{...linkInput,version:2,targetReviewVersion:5});
+    const refundLink={rowId:reversalBatch.batchId+':2',targetRowId:reversalBatch.batchId+':1',sourceReviewVersion:1,targetReviewVersion:1,version:0,status:'active',reason:'Save synthetic refund relationship'};
+    await api(linkPath,'owner','POST',refundLink,201);await api(linkPath,'owner','POST',{...refundLink,rowId:reversalBatch.batchId+':3'},409);const refundLinks=await api(linkPath+'?batchId='+reversalBatch.batchId,'owner');assert.equal(refundLinks.audit.length,1);assert.equal(refundLinks.rows[2].effectiveState,'not_linked');
+    await api(linkPath,'student','POST',linkInput,403);await api(linkPath,'owner','POST',linkInput,403,'https://other.example.test');await api(linkPath,'owner','DELETE',{},405);assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 saved payment links, paired snapshots, stale/revoke/reactivate lifecycle, saved-preview versions, refund cap and unchanged access');
+
 
 
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
