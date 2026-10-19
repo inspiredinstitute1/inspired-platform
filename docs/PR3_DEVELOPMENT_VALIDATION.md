@@ -8,13 +8,13 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 218 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 235 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
-| `npm run build` | Passed all five Vinext/Vite build stages and emitted all twenty-nine application routes. This builds artifacts without publishing them. |
-| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all sixteen admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
-| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all eighteen admin APIs and the progress API were rejected with private/no-store responses. |
+| `npm run build` | Passed all five Vinext/Vite build stages and emitted all thirty application routes. This builds artifacts without publishing them. |
+| `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all seventeen admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
+| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all nineteen admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
 | `git diff --check` | Passed. |
 
@@ -189,6 +189,14 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 - Nine service/database tests, three frontend tests and two additional policy tests pass; current total is 199. TypeScript, lint, bundle syntax and build pass (unchanged 28 routes/seventeen Admin APIs). Base plus fifteen explicit local migrations pass application/reapplication, cross-batch synthetic-link preservation and foreign-key checks.
 - Built Worker/local D1 verifies exact lookup, global activation/refund conflicts, excluded earlier receipts, negative batch movement and stale external reviews, with unchanged Student enrolments. All records remain synthetic. Real evidence/provider sign-in, browser/mobile and remote staging remain unverified. See FINANCE_CROSS_BATCH.md.
 
+## Synthetic local journal rehearsal milestone
+
+- Added a disabled-by-default, Admin-only loopback endpoint for explicitly named synthetic fixtures. An explicit process flag enables it only in disposable local tests; no hosting configuration or product UI enables it.
+- Migration 0017 creates separate immutable rehearsal operations, signed movements and atomic audits. Exact captured scope and latest review decision are revalidated inside the post; database guards repeat the checks. Caller entries/actors cannot override server facts. Real finance_transactions, verification and access records are untouched.
+- Retry-safe commands prevent duplicate original rows and repeated reversals. Reversals append exact compensation and preserve original records. External dependants require a matching active rehearsal original; originals cannot reverse before active dependants. Already posted refund/activation commitments continue to constrain the journal after saved links are revoked.
+- Seventeen additional tests pass (235 total), including concurrent decision/identity races, concurrent identical retry, audit/entry rollback, stale/restored supporting facts, separate mock/activation movements and cross-batch compensation. Build, TypeScript, lint and bundle syntax pass (30 routes/nineteen Admin APIs). Base plus seventeen local migrations preserve synthetic posts/reversals/audits and clean foreign keys on reapplication.
+- Built Worker/local D1 verifies synthetic journal capture, trusted actor, separate activation receipts, retry recovery, duplicate prevention and exact reversal with unchanged Student access. Actual provider evidence remains unavailable. FINANCE_REHEARSAL_JOURNAL.md defines proposed independent-verification requirements; real posting remains unimplemented.
+
 ## Immutable approval-review snapshot milestone
 
 - Added Admin review-approved/held captures from one canonical scope: selected accepted transactions/reviews, external originals, exact manual evidence and saved links, relevant peer relationships/supporting records, identities/programmes and existing ledger matches. Candidate views disclose excluded duplicate/rejected rows and selected-batch movement scope. No captured decision verifies provider payments, grants access or enables posting.
@@ -202,6 +210,6 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 
 - Provider-authenticated Admin/Student browser sessions and mobile UI interaction remain unverified in this pass. Anonymous local HTTP checks and service-level identity simulations passed.
 - Clean cached dependency installation passed; an exact Node 22 run and fresh registry installation were not performed. Tests used Node 24.19.0.
-- Remote staging/production migrations were not run. The sixteen admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
+- Remote staging/production migrations were not run. The seventeen admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
 - Existing incomplete features remain: audit logging outside programme/resource/enrolment/faculty/material/proposal/PDF and import/review managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
 - Keep this PR a draft. Production migration and release require owner approval and the separate staging/backup checks.

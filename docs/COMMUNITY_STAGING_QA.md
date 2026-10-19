@@ -18,3 +18,7 @@ Production is Sites-hosted (Vinext Worker + D1). Do **not** run these statements
 - Existing Sites identity/admin model is in use; Firebase migration is *not* part of this milestone.
 - No real community, payment or social URLs have been imported.
 - Social Links public display is implemented in development. Broader audit logging, verified learner/payment/community identity linkage, reconciliation and verified payment imports remain future work.
+
+## Synthetic journal rehearsal boundary
+
+Migration 0017 adds a separate local-only synthetic journal, not a real ledger. Keep FINANCE_REHEARSAL_MODE unset in hosted environments. Rehearsal rows must never enter verified revenue/access checks or be promoted into production. Local tests cover atomic capture/reversal and journal commitments; independent provider evidence and real posting remain pending. See FINANCE_REHEARSAL_JOURNAL.md.

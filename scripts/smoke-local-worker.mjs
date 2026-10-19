@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -25,7 +25,7 @@ if (roles) {
   assert(JSON.parse(migration.stdout).every(x => x.success));
 }
 const base = 'http://127.0.0.1:8793';
-const worker = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--config', config, '--local', '--persist-to', state, '--ip', '127.0.0.1', '--port', '8793', '--inspector-port', '0', ...(roles ? ['--var', 'PORTAL_ADMIN_EMAIL:owner@example.test'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
+const worker = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--config', config, '--local', '--persist-to', state, '--ip', '127.0.0.1', '--port', '8793', '--inspector-port', '0', ...(roles ? ['--var', 'PORTAL_ADMIN_EMAIL:owner@example.test','--var','FINANCE_REHEARSAL_MODE:synthetic-local-only'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
 let logs = '';
 try {
   await new Promise((resolveReady, reject) => {
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -428,6 +428,23 @@ try {
 
 
 
+
+    const rehearsalPath='/api/admin/finance-rehearsal';
+    const rehearsalBatch=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),sourceLabel:'Synthetic local journal export',data:JSON.stringify([{...importRow,externalReference:'SYNTHETIC-JOURNAL-T',grossPaise:10000,feePaise:0,netPaise:10000},{...importRow,source:'appx',externalReference:'SYNTHETIC-JOURNAL-A',transactionKind:'activation',grossPaise:1500,feePaise:500,netPaise:1000}])},201);
+    for(const number of [1,2]){await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:rehearsalBatch.batchId+':'+number,reason:'Review synthetic journal fixture'},201);await api(evidencePath,'owner','POST',{...evidenceInput,rowId:rehearsalBatch.batchId+':'+number,reviewVersion:1,reason:'Confirm synthetic journal fixture'},201);}
+    await api(linkPath,'owner','POST',{rowId:rehearsalBatch.batchId+':2',targetRowId:rehearsalBatch.batchId+':1',sourceReviewVersion:1,targetReviewVersion:1,version:0,status:'active',reason:'Bind synthetic journal activation'},201);
+    const journalCandidate=await api(approvalPath+'?batchId='+rehearsalBatch.batchId,'owner');
+    const journalApproval=await api(approvalPath,'owner','POST',{...approveBody,requestId:crypto.randomUUID(),batchId:rehearsalBatch.batchId,scopeHash:journalCandidate.candidate.scopeHash},201);
+    const journalBody={requestId:crypto.randomUUID(),action:'post',approvalId:journalApproval.id,syntheticAcknowledgement:true,reason:'Synthetic local journal post'};
+    const journalPosted=await api(rehearsalPath,'owner','POST',journalBody,201);assert.equal(journalPosted.canPost,false);assert.equal(journalPosted.verification,'unverified');assert(journalPosted.syntheticOnly);assert((await api(rehearsalPath,'owner','POST',journalBody)).idempotentReplay);
+    const journalDetail=await api(rehearsalPath+'?operationId='+journalPosted.id,'owner');assert.equal(journalDetail.entries.length,2);assert.equal(journalDetail.entries.reduce((sum,e)=>sum+e.cash_paise,0),11000);assert.equal(journalDetail.operation.actorId,'synthetic-owner');
+    await api(rehearsalPath,'owner','POST',{...journalBody,requestId:crypto.randomUUID()},409);
+    const journalReverse={requestId:crypto.randomUUID(),action:'reverse',operationId:journalPosted.id,syntheticAcknowledgement:true,reason:'Synthetic local journal reversal'};
+    const reversedJournal=await api(rehearsalPath,'owner','POST',journalReverse,201);assert((await api(rehearsalPath,'owner','POST',journalReverse)).idempotentReplay);
+    const reversedDetail=await api(rehearsalPath+'?operationId='+reversedJournal.id,'owner');assert.equal(reversedDetail.entries.reduce((sum,e)=>sum+e.cash_paise,0),-11000);
+    await api(rehearsalPath,'owner','POST',{...journalReverse,requestId:crypto.randomUUID()},409);await api(rehearsalPath,'owner','POST',journalBody,403,'https://other.example.test');await api(rehearsalPath,'owner','DELETE',{},405);
+    assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS local synthetic rehearsal journal: atomic entries/audit, separate activation receipts, replay recovery, exact reversal and unchanged access');
 
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');
