@@ -60,3 +60,16 @@ Keep APPX primary for premium content; website specializes in public discovery, 
 - UI must show last imported/synced timestamp, coverage window, completeness warnings, discrepancies and unreconciled payment count; never display fabricated or stale amounts as live.
 - Access to external financial accounts, imports, and any paid connector requires distinct explicit approval. No banking credentials, secrets or real transaction records in GitHub.
 - Finance dashboard and its module can be enabled/disabled in Admin's module manager without deleting prior ledger data.
+
+
+## Social media links and community membership / payment reconciliation
+- Add a public, mobile-readable, Admin-editable Social Links module with explicitly verified URLs for YouTube, WhatsApp, Telegram, Instagram, Facebook and any later channels. Do not invent links; support publish/disable/order and external-link safety.
+- Create Admin-only Community Manager for WhatsApp groups, Telegram groups/channels, and website chat groups if implemented. Track group name, platform, official link, entitlement scope, intended audience and last verified date.
+- Show a unified student directory linked by internal student ID, verified APPX/PhonePe/other payment records, course entitlement, expiry, and separately consented WhatsApp phone / Telegram user ID / website-chat identity.
+- Statuses: Free, Paid Active, Pending Verification, Expired, Refund Review, Mock-Test-Only, Manual Exception. A paid course purchase and low-value APPX activation must not be counted as duplicate tuition; mock-test-only membership must not imply premium course WhatsApp entitlement.
+- Community membership: Telegram bot may track consenting members via join requests and member-change events where authorized; Telegram Bot API has member-count and single-member checks, not a general historical full-roster export. Do not promise universal roster synchronization.
+- WhatsApp: official UI exposes member lists, but do not assume any authorized general-purpose API to automatically enumerate all ordinary WhatsApp group members. Start with admin-confirmed membership and approved manual imports or join-request workflows; no unofficial scraping or WhatsApp Web automation.
+- Never automatically remove a student from an external group solely because a payment status differs. Flag discrepancy for human review, confirm evidence, then use supported platform admin actions; keep appeal/override trail.
+- Reports: group member count (when verified), matched/unmatched members, free vs paid by group, paid-not-in-group, group-member-without-approved-entitlement, expired access, duplicate identity, unverified phone mappings, last import/sync timestamp.
+- Google Sheets/Drive may serve as export/import, backup and lightweight reconciliation, but not as an exposed browser-side authentication or permission database. Existing Sites-managed identity + D1 is the current operational source and should be evaluated before Firebase migration. Firestore Spark is optional only after review of cost, access/security and operational migration.
+- Protect phone numbers, payment status, Telegram user identifiers and member lists with Admin-only server authorization, consent, data minimization and retention practices. Do not embed sensitive rosters in public GitHub files.
