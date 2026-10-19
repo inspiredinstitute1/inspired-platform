@@ -21,10 +21,10 @@ async function saveFacultyAssignment(form){return withAdminForm(form,async()=>{
  if(form.elements.id.value){body.id=form.elements.id.value;body.version=Number(form.elements.version.value);}
  try{
   const response=await fetch('/api/admin/faculty',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},body:JSON.stringify(body)}),data=await response.json();if(!response.ok)throw Error(data.error||'Faculty assignment could not be saved.');
-  form.elements.id.value=data.id;form.elements.version.value=data.version;form.elements.reason.value='';message.textContent='Faculty assignment saved. Ask the account holder to refresh for the teaching menu.';await loadFacultyAdmin();
+  form.elements.id.value=data.id;form.elements.version.value=data.version;form.elements.reason.value='';message.textContent='Faculty assignment saved. Ask the account holder to refresh for the teaching menu.';await loadFacultyAdmin();if(typeof loadFacultyNoteReview==='function')await loadFacultyNoteReview();
  }catch(error){message.textContent=error.message;}
 }).finally(()=>{if(form.elements.id.value)for(const key of ['facultyId','courseId'])form.elements[key].disabled=true;});}
-function teachingPage(){if(!cloud.user)return intro('Teaching workspace','Sign in to view your assigned courses.')+link('account','Sign in','button');return intro('Teaching workspace','Your assigned courses and learning materials. Programme changes are managed by the institute Admin.')+'<section id="teaching-workspace" class="panel admin-manager" aria-live="polite">Loading teaching assignments…</section>';}
+function teachingPage(){if(!cloud.user)return intro('Teaching workspace','Sign in to view your assigned courses.')+link('account','Sign in','button');return intro('Teaching workspace','Your assigned courses and learning materials. Programme changes are managed by the institute Admin.')+'<section id="teaching-workspace" class="panel admin-manager" aria-live="polite">Loading teaching assignments…</section>'+facultyNotesPanel();}
 async function loadTeachingWorkspace(){
  const target=document.getElementById('teaching-workspace');if(!target)return;
  try{
