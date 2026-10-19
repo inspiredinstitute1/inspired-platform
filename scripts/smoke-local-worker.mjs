@@ -1,6 +1,7 @@
 // Run only the built Worker locally, with disposable state and no real identity.
 import './sites-env.mjs';
 import assert from 'node:assert/strict';
+import {syntheticPdf} from '../tests/fixtures/pdf.mjs';
 import resourceCatalogue from '../lib/resource-catalogue.json' with {type:'json'};
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
@@ -12,10 +13,11 @@ assert(process.argv.slice(2).every(x => x === '--roles'), 'Only --roles is suppo
 const config = resolve('dist/server/wrangler.json');
 const binding = JSON.parse(readFileSync(config, 'utf8')).d1_databases?.find(x => x.binding === 'DB');
 assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
+assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bucket.binding==='BUCKET')?.bucket_name,'site-creator-r2','Only the local R2 binding is allowed');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -49,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -78,9 +80,9 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
-      await api(path, 'owner');
+      await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
     await api('/api/admin/finance-preview', 'student', 'POST', { transactions: [] }, 403);
     console.log('PASS simulated owner/student identities and Admin authorization across built routes');
@@ -215,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -285,6 +287,28 @@ try {
     await api('/api/admin/faculty-notes','owner','DELETE',{},405);
     const reviewState=await api('/api/admin/faculty-notes','owner');assert.equal(reviewState.proposals.length,2);assert.equal(reviewState.audit.length,6);assert.equal(reviewState.accessAudit.length,3);
     console.log('PASS D1 opt-in faculty note access, private drafts, return/revise/accept into hidden Admin draft, conflicts and revocation');
+    async function uploadPdf(role='owner',bytes=syntheticPdf(),status=201,origin=base){
+      const form=new FormData();for(const [key,value] of Object.entries({title:'Synthetic local PDF',category:'Grammar',reason:'Review synthetic PDF upload',status:'published'}))form.append(key,value);form.append('file',new File([bytes],'synthetic.pdf',{type:'application/pdf'}));
+      const response=await get('/api/admin/files',{method:'POST',headers:{...identities[role],origin},body:form});assert.equal(response.status,status,await response.clone().text());return response.json();
+    }
+    const pdfGet=async(id,status=200,admin=false)=>{const response=await get((admin?'/api/admin/files/download':'/api/files')+(id?'?id='+id:''),admin?{headers:identities.owner}:{});assert.equal(response.status,status);assert.match(response.headers.get('cache-control'),/no-store/);return response;};
+    await uploadPdf('student',syntheticPdf(),403);await uploadPdf('owner',syntheticPdf(),403,'https://other.example.test');
+    await uploadPdf('owner',new Uint8Array(5*1024*1024+1),413);
+    const largePdf=new Uint8Array(2100000).fill(32),blankPdf=syntheticPdf();largePdf.set(blankPdf.slice(0,-6));largePdf.set(new TextEncoder().encode('%%EOF\n'),largePdf.length-6);
+    const uploaded=await uploadPdf('owner',largePdf);assert.equal(uploaded.status,'draft');await pdfGet(uploaded.id,404);
+    const privatePdf=await pdfGet(uploaded.id,200,true);assert.equal((await privatePdf.arrayBuffer()).byteLength,largePdf.length);assert.match(privatePdf.headers.get('content-disposition'),/^attachment/);
+    const pdfDetails={...uploaded,title:'Synthetic local PDF',category:'Grammar',reason:'Publish reviewed local PDF'};
+    await api('/api/admin/resources','owner','POST',{nodeId:enrolledCourse.id,kind:'note',resourceId:uploaded.id,enabled:true,sortOrder:3,reason:'Link uploaded PDF draft'},201);
+    assert(!(await publicMaterials()).some(item=>item.resourceId===uploaded.id));
+    await api('/api/admin/files','owner','POST',{...pdfDetails,status:'published'});
+    assert.equal((await(await pdfGet()).json()).files.length,1);const publishedPdf=await pdfGet(uploaded.id);assert.equal(publishedPdf.headers.get('content-type'),'application/pdf');assert.equal(publishedPdf.headers.get('x-content-type-options'),'nosniff');assert.match(publishedPdf.headers.get('content-security-policy'),/sandbox/);assert.deepEqual(new Uint8Array(await publishedPdf.arrayBuffer()),largePdf);
+    assert((await publicMaterials()).some(item=>item.resourceId===uploaded.id&&item.href==='/api/files?id='+uploaded.id));
+    assert((await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===uploaded.id));
+    await api('/api/admin/files','owner','POST',{...pdfDetails,status:'archived'},409);
+    await api('/api/admin/files','owner','POST',{...pdfDetails,version:2,status:'archived'});await pdfGet(uploaded.id,404);await(await pdfGet(uploaded.id,200,true)).arrayBuffer();
+    assert(!(await publicMaterials()).some(item=>item.resourceId===uploaded.id));assert(!(await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===uploaded.id));assert.equal((await(await pdfGet()).json()).files.length,0);
+    await api('/api/admin/files','owner','DELETE',{id:uploaded.id},405);const pdfState=await api('/api/admin/files','owner');assert.equal(pdfState.files.length,1);assert.equal(pdfState.audit.length,3);assert.equal(pdfState.storageAvailable,true);
+    console.log('PASS local R2/D1 PDF upload over 2 MB, bounded rejection/recovery, private draft download, publication/archive and immutable audit');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {

@@ -23,6 +23,8 @@ Public `/api/materials` lists only published metadata; `?id=authored-…` return
 
 Five service/database tests, three frontend regressions, a production build and built Worker/local D1 lifecycle checks pass. Local migration checks apply and reapply the base plus eight explicit migrations with foreign-key and synthetic-row preservation checks. The Worker check exercises longer Kannada text and publication/archive visibility in programme, enrolment and faculty resource views.
 
-Real provider sign-in, browser/mobile interaction and remote staging are unverified. File/PDF uploads, rich text, direct editing of existing notes by faculty, independent revisions for published notes, pagination and integration with existing global search, bookmarks and completion tracking remain future work. The new notes section is separate from existing catalogue filters and counts.
+Real provider sign-in, browser/mobile interaction and remote staging are unverified. Other file formats/larger uploads, rich text, direct editing of existing notes by faculty, independent revisions for published notes, pagination and integration with existing global search, bookmarks and completion tracking remain future work. The new notes section is separate from existing catalogue filters and counts.
 
 Faculty can submit new course-note proposals only with separate Admin permission. Acceptance creates a new Admin draft and hidden programme association; see `FACULTY_NOTE_REVIEW.md`. Existing private previews and Admin notes are not made editable by faculty.
+
+Admin PDF upload and controlled delivery are implemented separately; see `PDF_MATERIALS.md`. PDFs and text notes share programme-link choices but retain separate editors and immutable file records.

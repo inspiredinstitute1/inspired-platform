@@ -20,7 +20,7 @@ The programme list is empty initially. No sample programme is published automati
 ## Technical validation
 
 Explicit development migration: `docs/migrations/0004_content_manager.sql`.
-It is outside the generated Drizzle journal, like the earlier Admin migrations. Apply the base and all nine Admin SQL migrations only to an approved isolated target.
+It is outside the generated Drizzle journal, like the earlier Admin migrations. Apply the base and all ten Admin SQL migrations only to an approved isolated target.
 
 Local checks:
 

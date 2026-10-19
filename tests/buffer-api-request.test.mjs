@@ -46,3 +46,11 @@ test('API buffering drains modest oversized bodies before returning the route li
   assert.equal(result.status, 413);
   assert(request.bodyUsed);
 });
+
+test('only PDF multipart uploads receive the bounded 6 MiB route allowance',async()=>{
+ const upload=new Request('https://local.test/api/admin/files',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=synthetic'},body:new Uint8Array(2100000)});
+ const accepted=await bufferApiRequest(upload);assert(accepted instanceof Request);assert.equal((await accepted.arrayBuffer()).byteLength,2100000);
+ const json=new Request('https://local.test/api/admin/files',{method:'POST',headers:{'content-type':'application/json'},body:'x'.repeat(3001)});assert.equal((await bufferApiRequest(json)).status,413);
+ const other=new Request('https://local.test/api/admin/community',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=synthetic'},body:new Uint8Array(2100000)});assert.equal((await bufferApiRequest(other)).status,413);
+ const large=new Request('https://local.test/api/admin/files',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=synthetic','content-length':String(6*1024*1024+1)},body:'small'});assert.equal((await bufferApiRequest(large)).status,413);
+});
