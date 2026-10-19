@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -351,6 +351,22 @@ try {
     await api('/api/admin/finance-review','student','POST',reviewInput,403);await api('/api/admin/finance-review','owner','POST',reviewInput,403,'https://other.example.test');await api('/api/admin/finance-review','owner','DELETE',{},405);
     assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS D1 manual learner/programme matching, evidence history, review conflicts and unchanged Student access');
+    const previewPath='/api/admin/finance-ledger-preview';
+    const previewInput={batchId:imported.batchId,versions:[{rowId:reviewInput.rowId,version:2},{rowId:imported.batchId+':4',version:0}],links:[{rowId:imported.batchId+':4',targetRowId:reviewInput.rowId}]};
+    assert.equal((await api(previewPath,'owner','POST',previewInput)).blockedCount,2);
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,version:2,reason:'Resolve synthetic dispute'});
+    await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:imported.batchId+':4',reason:'Review synthetic activation'},201);
+    await api(previewPath,'owner','POST',previewInput,409);
+    previewInput.versions=[{rowId:reviewInput.rowId,version:3},{rowId:imported.batchId+':4',version:1}];
+    const ledgerPreview=await api(previewPath,'owner','POST',previewInput);assert.equal(ledgerPreview.blockedCount,0);assert.equal(ledgerPreview.canPost,false);assert.equal(ledgerPreview.verification,'unverified');assert.equal(ledgerPreview.totals.tuitionGrossPaise,99900);assert.equal(ledgerPreview.totals.activationGrossPaise,1500);assert.equal(ledgerPreview.totals.cashNetPaise,100900);assert(ledgerPreview.rows.every(row=>row.grantsCommunityAccess===false));
+    await api(previewPath,'student','POST',previewInput,403);await api(previewPath,'owner','POST',previewInput,403,'https://other.example.test');await api(previewPath,'owner','DELETE',{},405);
+    const reversalBatch=await api('/api/admin/finance-imports','owner','POST',{...importBody,requestId:crypto.randomUUID(),data:JSON.stringify([{...importRow,externalReference:'REVERSAL-SALE',grossPaise:10000,netPaise:10000},{...importRow,externalReference:'REVERSAL-A',transactionKind:'refund',grossPaise:4000,netPaise:4000},{...importRow,externalReference:'REVERSAL-B',transactionKind:'refund',grossPaise:7000,netPaise:7000}])},201);
+    for(const number of [1,2,3])await api('/api/admin/finance-review','owner','POST',{...reviewInput,rowId:reversalBatch.batchId+':'+number,reason:'Review synthetic reversal'},201);
+    const reversalInput={batchId:reversalBatch.batchId,versions:[1,2,3].map(number=>({rowId:reversalBatch.batchId+':'+number,version:1})),links:[2,3].map(number=>({rowId:reversalBatch.batchId+':'+number,targetRowId:reversalBatch.batchId+':1'}))};
+    const reversals=await api(previewPath,'owner','POST',reversalInput);assert.equal(reversals.blockedCount,2);assert.equal(reversals.totals.refundPaise,0);assert.equal(reversals.totals.tuitionGrossPaise,10000);assert.equal(reversals.totalsComplete,false);assert(reversals.rows.slice(1).every(row=>row.blockers.includes('refunds_exceed_original_gross')));
+    assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
+    console.log('PASS D1 saved ledger preview, separate activation totals, stale-review protection, over-refund blocking and unchanged access');
+
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');

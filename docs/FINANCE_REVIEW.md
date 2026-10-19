@@ -18,7 +18,7 @@ An evidence reference is plain text, not a proof upload or an independently veri
 
 Every save requires a reason. Matches, evidence and status may be corrected or reopened; immutable imported rows are never overwritten. The latest 50 audit changes for the selected batch show before/after values, server-derived actor and time. Reviews and audit cannot be deleted. Concurrent or stale saves receive 409 and leave input intact. Use Open / reload saved review to retrieve the newer version before reapplying changes. A lost successful response can also require this reload.
 
-No review writes finance_transactions, posts revenue, verifies a payment, grants programme/APPX/group access or matches an activation fee against tuition. Reviewed ledger approval and independent evidence verification remain future work.
+No review writes finance_transactions, posts revenue, verifies a payment, grants programme/APPX/group access or matches an activation fee against tuition. A separate [ledger rules preview](FINANCE_LEDGER_PREVIEW.md) can calculate proposed amounts and validate temporary activation/refund links. Durable ledger approval and independent evidence verification remain future work.
 
 ## Development implementation and checks
 

@@ -8,13 +8,13 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 135 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 153 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
-| `npm run build` | Passed all five Vinext/Vite build stages and emitted all twenty-five application routes. This builds artifacts without publishing them. |
+| `npm run build` | Passed all five Vinext/Vite build stages and emitted all twenty-six application routes. This builds artifacts without publishing them. |
 | `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all twelve admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
-| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all fourteen admin APIs and the progress API were rejected with private/no-store responses. |
+| `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all fifteen admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
 | `git diff --check` | Passed. |
 
@@ -155,6 +155,14 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 - Added escaped Admin forms, manual dropdown selection, explicit row reload, preserved unsaved input on failure and late-response guards for batch selection.
 - Seven service/database tests and three frontend tests pass; current total is 135. Built Worker/local D1 verifies role/origin boundaries, invalid matches/evidence, duplicate/rejected exclusion, creation/reopening, stale conflict, retained audit and unchanged Student enrolments. SQLite service checks also confirm zero ledger writes.
 - Build emits 25 routes, including fourteen Admin APIs; TypeScript, lint and bundle syntax pass. Base plus twelve explicit migrations pass local application/reapplication, synthetic-row preservation and foreign-key checks. No real payment records, ledger posting, payment verification, access grants or remote migrations were performed. Browser/mobile/provider sign-in and isolated remote staging remain pending. See FINANCE_REVIEW.md.
+
+## Saved-payment ledger rules preview milestone
+
+- Added a separate Admin-only, no-write preview based on saved accepted rows and their reviewed learner/programme matches. Caller-provided totals, transactions and verification claims are ignored. Complete exact review-version snapshots are required; stale/duplicate/missing versions return 409.
+- Added explicit temporary same-batch activation/refund links. APPX activation requires same-learner/programme non-APPX tuition and remains separate from tuition gross. Refunds require original tuition/mock payment, consistent matches/dates and zero fees. Excess cumulative refunds and competing activations are blocked as groups; blocked targets exclude their dependants. Existing transaction references cannot be counted again. Unresolved adjustments/fee directions remain blocked.
+- Exact BigInt totals detect unsafe-number overflow. Blocked proposals are excluded with explicit incomplete-total labels. Mock-only payments grant no group access. The endpoint always reports unverified and canPost=false; no approval token, persistent link, ledger entry, verification decision or entitlement is created.
+- Nine policy tests, six service/database tests and three frontend tests pass, bringing the current total to 153. SQLite total_changes confirms no preview writes. Build (26 routes/fifteen Admin APIs), TypeScript, lint and bundle syntax pass. Base plus twelve explicit local D1 migrations pass application/reapplication and foreign-key checks; no new migration was needed.
+- Built local Worker/D1 checks verify saved review versions, separated tuition/activation amounts, stale rejection, grouped over-refund blocking, role/origin limits and unchanged Student enrolments. All records are synthetic. Browser/provider sign-in, remote staging and real payment evidence remain unverified. See FINANCE_LEDGER_PREVIEW.md.
 
 ## Remaining release checks
 
