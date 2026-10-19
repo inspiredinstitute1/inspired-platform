@@ -1,17 +1,28 @@
 // Run only the built Worker locally, with disposable state and no real identity.
 import './sites-env.mjs';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { spawn } from 'node:child_process';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { resolve, join } from 'node:path';
+import { spawn, spawnSync } from 'node:child_process';
+
+const roles = process.argv.includes('--roles');
+assert(process.argv.slice(2).every(x => x === '--roles'), 'Only --roles is supported');
 
 const config = resolve('dist/server/wrangler.json');
 const binding = JSON.parse(readFileSync(config, 'utf8')).d1_databases?.find(x => x.binding === 'DB');
 assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
+if (roles) {
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation'].map(n => `docs/migrations/${n}.sql`)];
+  const sql = join(state, 'schema.sql');
+  writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
+  const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
+  assert.equal(migration.status, 0, migration.stderr + migration.stdout);
+  assert(JSON.parse(migration.stdout).every(x => x.success));
+}
 const base = 'http://127.0.0.1:8793';
-const worker = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--config', config, '--local', '--persist-to', state, '--ip', '127.0.0.1', '--port', '8793', '--inspector-port', '0'], { stdio: ['ignore', 'pipe', 'pipe'] });
+const worker = spawn(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'dev', '--config', config, '--local', '--persist-to', state, '--ip', '127.0.0.1', '--port', '8793', '--inspector-port', '0', ...(roles ? ['--var', 'PORTAL_ADMIN_EMAIL:owner@example.test'] : [])], { stdio: ['ignore', 'pipe', 'pipe'] });
 let logs = '';
 try {
   await new Promise((resolveReady, reject) => {
@@ -45,8 +56,78 @@ try {
     assert.match(response.headers.get('cache-control') ?? '', /no-store/);
     console.log('PASS anonymous API blocked and uncached', path);
   }
+  if (roles) {
+    // Simulates identity headers normally set by the trusted hosting gateway.
+    // This checks application roles, not the provider's sign-in/gateway boundary.
+    const identities = {
+      owner: { 'oai-authenticated-user-id': 'synthetic-owner', 'oai-authenticated-user-email': 'owner@example.test' },
+      student: { 'oai-authenticated-user-id': 'synthetic-student', 'oai-authenticated-user-email': 'student@example.test' },
+      other: { 'oai-authenticated-user-id': 'synthetic-other', 'oai-authenticated-user-email': 'other@example.test' },
+    };
+    async function api(path, role, method = 'GET', body, status = 200, origin = base) {
+      const response = await get(path, { method, headers: { ...identities[role], origin, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+      assert.equal(response.status, status, `${role} ${method} ${path}: ${response.status === status ? '' : await response.text()}`);
+      assert.match(response.headers.get('cache-control') ?? '', /no-store/);
+      return response.json();
+    }
+    for (const role of ['owner', 'student']) {
+      const page = await get('/', { headers: identities[role] });
+      const html = await page.text();
+      const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
+      assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
+    }
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning']) {
+      await api(path, 'student', 'GET', undefined, 403);
+      await api(path, 'owner');
+    }
+    await api('/api/admin/finance-preview', 'student', 'POST', { transactions: [] }, 403);
+    console.log('PASS simulated owner/student identities and Admin authorization across built routes');
+
+    const initial = await api('/api/progress', 'student');
+    assert.equal(initial.version, 0);
+    await api('/api/progress', 'student', 'PUT', { version: 0, payload: { ...initial.payload, goal: 7 } });
+    assert.equal((await api('/api/progress', 'student')).payload.goal, 7);
+    assert.equal((await api('/api/progress', 'other')).version, 0);
+    await api('/api/progress', 'student', 'PUT', { version: 0, payload: initial.payload }, 409);
+    const owner = await api('/api/progress', 'owner');
+    await api('/api/progress', 'owner', 'PUT', { version: 0, payload: owner.payload });
+    assert.equal((await api('/api/admin/learning', 'owner')).learnerCount, 1);
+    console.log('PASS progress persistence, user isolation, stale-save conflicts and Admin exclusion');
+
+    const link = { platform: 'website', label: 'Synthetic local test', url: 'https://example.test', enabled: false, sortOrder: 1 };
+    const created = await api('/api/admin/social-links', 'owner', 'POST', link, 201);
+    await api('/api/admin/social-links', 'owner', 'POST', { ...link, id: created.id, enabled: true });
+    assert.equal((await api('/api/admin/social-links', 'owner')).links[0].enabled, true);
+    await api('/api/admin/social-links', 'owner', 'DELETE', { id: created.id });
+    assert.equal((await api('/api/admin/social-links', 'owner')).links.length, 0);
+    const group = await api('/api/admin/community', 'owner', 'POST', { action: 'createGroup', platform: 'telegram', title: 'Synthetic local group', programme: 'English', accessTier: 'premium_course' }, 201);
+    await api('/api/admin/community', 'owner', 'POST', { action: 'setGroupEnabled', id: group.id, enabled: true });
+    const member = { action: 'upsertMembership', groupId: group.id, learnerId: 'synthetic-student', membershipStatus: 'pending', paymentStatus: 'pending_verification' };
+    await api('/api/admin/community', 'owner', 'POST', member);
+    await api('/api/admin/community', 'owner', 'POST', { ...member, membershipStatus: 'confirmed' });
+    const community = await api('/api/admin/community', 'owner');
+    assert.equal(community.groups[0].enabled, 1);
+    assert.equal(community.memberships.length, 1);
+    assert.equal(community.memberships[0].verifiedAt, null);
+    console.log('PASS persisted social CRUD, group enable and membership upsert through built Worker/D1');
+
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
+      await api(path, 'owner', 'POST', {}, 403, 'https://other.example.test');
+    }
+    await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: Array(201).fill({}) }, 400);
+    await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: [], padding: 'x'.repeat(100001) }, 413);
+    const transaction = { source: 'phonepe', externalReference: 'synthetic-1', transactionKind: 'tuition', grossPaise: 99900, netPaise: 99900, paidAt: '2026-10-19' };
+    const preview = await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: [transaction, transaction, { ...transaction, netPaise: -1 }] });
+    assert.equal(preview.previewOnly, true);
+    assert.equal(preview.acceptedCount, 1);
+    assert.equal(preview.duplicates.length, 1);
+    assert.equal(preview.rejected.length, 1);
+    assert.equal(preview.totals.netPaise, 99900);
+    console.log('PASS Admin origin checks, finance row limit, duplicates and invalid amounts');
+    assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
+  }
 } catch (error) {
-  console.error(logs);
+  console.error(logs.slice(-10000));
   throw error;
 } finally {
   worker.kill('SIGTERM');

@@ -17,7 +17,8 @@
     "test:all": "node scripts/prepare-portal.mjs && node --test tests/*.test.mjs",
     "typecheck": "tsc --noEmit",
     "test:db:local": "node scripts/validate-local-d1.mjs",
-    "test:runtime:local": "node scripts/smoke-local-worker.mjs"
+    "test:runtime:local": "node scripts/smoke-local-worker.mjs",
+    "test:roles:local": "node scripts/smoke-local-worker.mjs --roles"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
