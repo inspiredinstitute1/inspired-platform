@@ -5,7 +5,7 @@ import vm from 'node:vm';
 const esc=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r});return{resolve,promise}};
 const response=note=>({ok:true,json:async()=>({note})});
-function load(globals){const context=vm.createContext({...globals});for(const file of ['admin-ui.js','material-admin.js'])vm.runInContext(readFileSync('portal/'+file,'utf8'),context);return context;}
+function load(globals){const context=vm.createContext({readingActions:()=>'',...globals});for(const file of ['admin-ui.js','material-admin.js'])vm.runInContext(readFileSync('portal/'+file,'utf8'),context);return context;}
 test('public note reader escapes text instead of interpreting HTML and does not send credentials',async()=>{
  const target={isConnected:true,innerHTML:''};let options;
  const context=load({document:{getElementById:()=>target},esc,fetch:async(_url,opt)=>{options=opt;return response({title:'<img src=x onerror=alert(1)>',category:'<script>bad</script>',body:'<iframe src="javascript:alert(1)"></iframe>\nಕನ್ನಡ'})}});

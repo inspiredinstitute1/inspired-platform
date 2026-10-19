@@ -302,13 +302,29 @@ try {
     assert(!(await publicMaterials()).some(item=>item.resourceId===uploaded.id));
     await api('/api/admin/files','owner','POST',{...pdfDetails,status:'published'});
     assert.equal((await(await pdfGet()).json()).files.length,1);const publishedPdf=await pdfGet(uploaded.id);assert.equal(publishedPdf.headers.get('content-type'),'application/pdf');assert.equal(publishedPdf.headers.get('x-content-type-options'),'nosniff');assert.match(publishedPdf.headers.get('content-security-policy'),/sandbox/);assert.deepEqual(new Uint8Array(await publishedPdf.arrayBuffer()),largePdf);
-    assert((await publicMaterials()).some(item=>item.resourceId===uploaded.id&&item.href==='/api/files?id='+uploaded.id));
+    assert((await publicMaterials()).some(item=>item.resourceId===uploaded.id&&item.href==='#/pdf/'+uploaded.id));
     assert((await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===uploaded.id));
     await api('/api/admin/files','owner','POST',{...pdfDetails,status:'archived'},409);
     await api('/api/admin/files','owner','POST',{...pdfDetails,version:2,status:'archived'});await pdfGet(uploaded.id,404);await(await pdfGet(uploaded.id,200,true)).arrayBuffer();
     assert(!(await publicMaterials()).some(item=>item.resourceId===uploaded.id));assert(!(await api('/api/enrolments','student')).enrolments[0].resources.some(item=>item.resourceId===uploaded.id));assert.equal((await(await pdfGet()).json()).files.length,0);
     await api('/api/admin/files','owner','DELETE',{id:uploaded.id},405);const pdfState=await api('/api/admin/files','owner');assert.equal(pdfState.files.length,1);assert.equal(pdfState.audit.length,3);assert.equal(pdfState.storageAvailable,true);
     console.log('PASS local R2/D1 PDF upload over 2 MB, bounded rejection/recovery, private draft download, publication/archive and immutable audit');
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,version:4,status:'published'});
+    await api('/api/admin/files','owner','POST',{...pdfDetails,version:3,status:'published'});
+    const library=await api('/api/library?role=Admin','student');assert.deepEqual(new Set(library.notes.map(note=>note.id)),new Set([createdNote.id,uploaded.id]));assert(!JSON.stringify(library).includes('actorId'));assert(!JSON.stringify(library).includes('object_key'));assert(library.notes.every(note=>!('body' in note)&&!('status' in note)));
+    assert.equal((await api('/api/library?id='+uploaded.id,'student')).note.source,'pdf');await api('/api/library?id='+accepted.materialId,'owner','GET',undefined,404);
+    const learning=await api('/api/progress','student'),savedPayload={...learning.payload,saved:['homophones-100',createdNote.id,uploaded.id],read:[...new Set([...learning.payload.read,createdNote.id,uploaded.id])]};
+    const savedLibrary=await api('/api/progress','student','PUT',{version:learning.version,payload:savedPayload});assert.deepEqual(savedLibrary.payload.saved,savedPayload.saved);assert.deepEqual(savedLibrary.unavailableResources,[]);
+    const reloadedLibrary=await api('/api/progress','student');assert.deepEqual(reloadedLibrary.payload.read,savedPayload.read);assert.deepEqual(reloadedLibrary.payload.saved,savedPayload.saved);
+    await api('/api/progress','student','PUT',{version:learning.version,payload:{...savedPayload,saved:[]}},409);
+    await api('/api/admin/materials','owner','POST',{...authored,...createdNote,version:5,status:'archived'});
+    await api('/api/admin/files','owner','POST',{...pdfDetails,version:4,status:'archived'});
+    assert.equal((await api('/api/library','student')).notes.length,0);await api('/api/library?id='+createdNote.id,'student','GET',undefined,404);await api('/api/library?id='+uploaded.id,'student','GET',undefined,404);
+    const retained=await api('/api/progress','student','PUT',{version:savedLibrary.version,payload:{...savedPayload,goal:6}});assert.deepEqual(retained.payload.saved,savedPayload.saved);assert.deepEqual(retained.unavailableResources,[]);
+    const otherLearning=await api('/api/progress?userId=synthetic-student','other');assert(!otherLearning.payload.saved.includes(createdNote.id));
+    const omitted=await api('/api/progress','other','PUT',{version:otherLearning.version,payload:{...otherLearning.payload,saved:[createdNote.id,uploaded.id],read:[createdNote.id]}});assert.deepEqual(omitted.payload.saved,[]);assert.deepEqual(omitted.payload.read,[]);assert.deepEqual(new Set(omitted.unavailableResources),new Set([createdNote.id,uploaded.id]));
+    const removedBookmark=await api('/api/progress','student','PUT',{version:retained.version,payload:{...savedPayload,saved:['homophones-100'],goal:6}});assert.deepEqual(removedBookmark.payload.saved,['homophones-100']);assert(removedBookmark.payload.read.includes(uploaded.id));
+    console.log('PASS D1 published library metadata, new note/PDF bookmarks and completion, stale conflicts, withdrawal retention/removal and cross-account isolation');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {

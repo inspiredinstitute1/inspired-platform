@@ -36,7 +36,7 @@ async function syncProgress(pull=false){
    const sent=snapshot(),r=await accountFetch('/api/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:cloud.version,payload:sent})}),remote=await r.json();
    if(r.status===409){state=mergeCloud(cloud.base,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;persistAccount();continue;}
    if(!r.ok)throw new Error(remote.error||'Save unavailable');
-   state=mergeCloud(sent,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;cloud.pending=!same(state,remote.payload);cloud.error=false;persistAccount();
+   state=mergeCloud(sent,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;cloud.pending=!same(state,remote.payload);cloud.error=false;persistAccount();if(remote.unavailableResources?.length)toast('Some unavailable notes could not be added. Your other progress was saved.');
   }
   if(cloud.pending)throw new Error('Another device is saving. Please retry.');
   cloud.error=false;persistAccount();
@@ -47,7 +47,7 @@ function initCloud(){
  updateCloudStatus();
  if(!cloud.user)return;
  window.addEventListener('online',()=>syncProgress(true));
- window.addEventListener('focus',async()=>{const routeBefore=route();await syncProgress(true);if(route()===routeBefore&&!$('#profile-form')&&!$('#admin-note-form'))render(true);});
+ window.addEventListener('focus',async()=>{const routeBefore=route();await syncProgress(true);if(route()===routeBefore&&!document.querySelector('#main form'))render(true);});
  if(cloud.pending||!cloud.loaded)cloud.timer=setTimeout(()=>syncProgress(),800);
 }
 async function loadAdminLearning(){

@@ -28,10 +28,3 @@ async function savePdfMetadata(form){return withAdminForm(form,async()=>{
   form.elements.version.value=data.version;form.elements.reason.value='';message.textContent=body.status==='published'?'Published. This PDF is free to everyone.':'Saved. This PDF is not publicly downloadable.';await loadFileAdmin();await loadResourceAdmin();
  }catch(error){message.textContent=error.message;}
 });}
-async function loadPublishedPdfs(){
- const target=document.getElementById('published-pdf-notes');if(!target)return;
- try{
-  const response=await fetch('/api/files',{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error('PDF study notes are temporarily unavailable.');if(!target.isConnected)return;
-  target.innerHTML=data.files.length?'<h2>Free PDF study notes</h2>'+data.files.map(file=>`<div class="notice" style="margin:12px 0"><a class="button secondary" href="/api/files?id=${esc(file.id)}">Download PDF: ${esc(file.title)}</a><p class="small muted">${esc(file.category)} · ${(file.bytes/1024).toFixed(1)} KiB</p></div>`).join(''):'';
- }catch(error){if(target.isConnected)target.textContent=error.message;}
-}

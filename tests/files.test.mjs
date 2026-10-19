@@ -48,7 +48,7 @@ test('PDF programme links require publication and archive removes discovery/down
  const h=setup();try{
   const node=crypto.randomUUID();h.db.prepare("INSERT INTO content_nodes(id,kind,title,status,changed_by,change_reason,updated_at) VALUES(?,'division','PDF course catalogue','published','owner','Synthetic setup',1)").run(node);
   const note=await h.create();assert.equal((await resourceEndpoint(h.request('POST',{nodeId:node,kind:'note',resourceId:note.id,enabled:true,sortOrder:1,reason:'Link PDF draft'}),owner,h.env)).status,201);
-  assert.equal((await publicProgrammeResources(h.DB)).length,0);await h.call({...note,status:'published'});const links=await publicProgrammeResources(h.DB);assert.equal(links.length,1);assert.equal(links[0].href,'/api/files?id='+note.id);
+  assert.equal((await publicProgrammeResources(h.DB)).length,0);await h.call({...note,status:'published'});const links=await publicProgrammeResources(h.DB);assert.equal(links.length,1);assert.equal(links[0].href,'#/pdf/'+note.id);
   await h.call({...note,version:2,status:'archived'});assert.equal((await publicProgrammeResources(h.DB)).length,0);assert.equal((await h.download(note.id)).status,404);assert.equal(h.objects.size,1);assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM programme_resources').get().n,1);assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM pdf_audit').get().n,3);
  }finally{h.db.close()}
 });

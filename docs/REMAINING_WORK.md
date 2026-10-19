@@ -7,6 +7,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Programme hierarchy, status/order controls, atomic audit and non-destructive archiving.
 - Links from programmes to existing free notes, videos and practice tests, with order/visibility and audit.
 - Manual website enrolments, expiry/revocation, trusted-account selection and private My programmes view. These are not paid entitlements.
+- Unified note/PDF cards, category and saved filters, metadata search, bookmarks/completion and account-scoped withdrawal history.
 - Admin PDF uploads with private drafts, published-only downloads, programme links, immutable objects and audit; local R2/D1 validation.
 - Separate opt-in faculty note proposals, course-scoped own drafts and Admin return/reject/accept review. Acceptance creates an unpublished Admin draft and hidden link.
 - Admin-authored plain-text study notes with draft/review/publish/archive, atomic audit, public reader and programme links.
@@ -20,7 +21,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 | Area | Remaining result |
 | --- | --- |
 | Faculty | Direct editing of existing shared/Admin notes and broader faculty workflows. Opt-in own-note drafting/submission and Admin review are implemented; public publishing, finance and owner controls remain Admin-only. |
-| Learning material | Other file formats, larger-file/revision workflows and full-library search/bookmark/completion integration. Plain-text notes and PDF uploads, review/publication, storage and programme attachment are implemented. |
+| Learning material | Other file formats, larger-file/revision workflows, pagination and full-text/PDF-content indexing. Unified metadata search, bookmarks and completion are implemented. Plain-text notes and PDF uploads, review/publication, storage and programme attachment are implemented. |
 | Paid/private access | Evidence-backed paid entitlements, private delivery and server-authoritative premium testing. Existing public free resources cannot be made private merely by revoking an enrolment. APPX remains separate. |
 | Finance | Authorized imports, persisted verified ledger, tuition/activation matching without double counting, fees/refunds/settlements, summaries and exports. Current tool is a preview only. |
 | Community | Confirmed learner/account/payment mappings, consented external identifiers, manual import/review, discrepancy reports and supported integrations. No assumed universal WhatsApp roster API or automatic removals. |
@@ -37,4 +38,4 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.
 
-Suggested next implementation: unified search/filtering and saved-note integration for new materials, then verified finance import. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.
+Suggested next implementation: an auditable finance import workflow that distinguishes unverified source records from verified ledger entries. Direct editing of existing shared notes should require a separate revision model. Release verification can proceed as soon as an appropriate authenticated browser and isolated staging target are available.

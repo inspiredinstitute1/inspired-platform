@@ -20,19 +20,11 @@ async function saveMaterial(form){return withAdminForm(form,async()=>{
  }catch(error){message.textContent=error.message;}
 });}
 function materialReaderPage(){return '<section id="authored-note-reader" class="panel" aria-live="polite"><p>Loading study note…</p></section>';}
-async function loadPublishedMaterials(){
- const target=document.getElementById('published-study-notes');if(!target)return;
- try{
-  const response=await fetch('/api/materials',{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error('Additional study notes are temporarily unavailable.');
-  if(!target.isConnected)return;
-  target.innerHTML=data.notes.length?'<h2>More free study notes</h2>'+data.notes.map(note=>`<div class="notice" style="margin:10px 0"><a class="text-link" href="#/material/${esc(note.id)}">${esc(note.title)}</a><p class="small muted">${esc(note.category)}</p></div>`).join(''):'';
- }catch(error){if(target.isConnected)target.textContent=error.message;}
-}
 async function loadMaterialReader(id){
  const target=document.getElementById('authored-note-reader');if(!target)return;
  try{
   const response=await fetch('/api/materials?id='+encodeURIComponent(id),{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(response.status===404?'This note is unavailable or has been withdrawn.':'Study note temporarily unavailable.');
   if(!target.isConnected)return;
-  const note=data.note;target.innerHTML=`<a class="text-link" href="#/notes">← Free study notes</a><p class="eyebrow">${esc(note.category)}</p><h1>${esc(note.title)}</h1><div class="authored-note-text">${esc(note.body)}</div>`;
+  const note=data.note;target.innerHTML=`<a class="text-link" href="#/notes">← Free study notes</a><p class="eyebrow">${esc(note.category)}</p><h1>${esc(note.title)}</h1><div class="authored-note-text">${esc(note.body)}</div>${readingActions(note)}`;
  }catch(error){if(target.isConnected)target.textContent=error.message;}
 }

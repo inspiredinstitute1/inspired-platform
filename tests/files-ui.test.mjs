@@ -20,10 +20,3 @@ test('failed/oversized PDF uploads retain selection and metadata and restore con
   const h=uploadHarness(settings);await h.context.uploadStudyPdf(h.form);assert.equal(h.fields.file.files[0],h.file);assert.equal(h.fields.title.value,'Draft PDF');assert.equal(h.fields.file.disabled,false);assert.equal(h.requests.length,settings.size?0:1);assert(h.message.textContent);
  }
 });
-test('public PDF listings escape labels, omit credentials and suppress detached-view responses',async()=>{
- const target=element();let pendingResolve,options;
- const context=load({esc,document:{getElementById:()=>target},fetch:(_url,opt)=>{options=opt;return new Promise(resolve=>{pendingResolve=resolve})}});
- const response={ok:true,json:async()=>({files:[{id:'pdf-safe',title:'<img src=x onerror=alert(1)>',category:'<script>bad</script>',bytes:100}]})};
- const first=context.loadPublishedPdfs();target.isConnected=false;pendingResolve(response);await first;assert.equal(target.innerHTML,'');
- target.isConnected=true;const current=context.loadPublishedPdfs();pendingResolve(response);await current;assert(!target.innerHTML.includes('<img'));assert.match(target.innerHTML,/&lt;img/);assert.equal(options.credentials,'omit');assert.equal(options.cache,'no-store');
-});
