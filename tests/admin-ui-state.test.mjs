@@ -92,3 +92,43 @@ test('finance preview rejects malformed or excessive input before any network re
   assert.equal(h.requests.length, 0);
   assert.equal(h.submit.disabled, false);
 });
+
+function programmeHarness(response) {
+  const values = {id:'',version:'',kind:'division',parentId:'',title:'Synthetic division',description:'Description',status:'draft',sortOrder:'100',reason:'Create division'};
+  const fields = Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{value,disabled:false}]));
+  const form = Object.assign(element(),{elements:fields,querySelectorAll:()=>Object.values(fields)});
+  const message=element(), requests=[];
+  const context=load('admin-ui.js',{
+    document:{getElementById:id=>id==='programme-message'?message:form},
+    fetch:async(_url,options)=>{const body=JSON.parse(options.body);requests.push(body);return response(body);},
+  });
+  vm.runInContext(readFileSync('portal/content-admin.js','utf8'),context);
+  context.loadContentAdmin=async()=>{};
+  return {context,form,fields,message,requests};
+}
+
+test('programme form turns a successful create into a versioned edit instead of creating duplicates',async()=>{
+  const id='00000000-0000-4000-8000-000000000001';
+  const h=programmeHarness(body=>({ok:true,json:async()=>({id,version:body.version?body.version+1:1})}));
+  await h.context.saveProgramme(h.form);
+  assert.equal(h.fields.id.value,id);
+  assert.equal(h.fields.version.value,1);
+  assert.equal(h.fields.kind.disabled,true);
+  h.fields.title.value='Updated division';h.fields.reason.value='Rename division';
+  await h.context.saveProgramme(h.form);
+  assert.equal(h.requests[1].id,id);
+  assert.equal(h.requests[1].version,1);
+  assert.equal(h.fields.version.value,2);
+  assert.equal(h.form.getAttribute('aria-busy'),null);
+});
+
+test('programme conflict preserves the unsaved edit and restores form controls',async()=>{
+  const h=programmeHarness(()=>({ok:false,status:409,json:async()=>({error:'A newer version exists. Reload before editing.'})}));
+  h.fields.id.value='00000000-0000-4000-8000-000000000001';h.fields.version.value='1';h.fields.kind.disabled=true;
+  await h.context.saveProgramme(h.form);
+  assert.equal(h.fields.title.value,'Synthetic division');
+  assert.equal(h.fields.version.value,'1');
+  assert.equal(h.fields.reason.value,'Create division');
+  assert.equal(h.fields.title.disabled,false);
+  assert.match(h.message.textContent,/newer version/);
+});

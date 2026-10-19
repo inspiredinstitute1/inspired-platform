@@ -14,7 +14,7 @@ assert.equal(binding?.database_id, '00000000-0000-4000-8000-000000000000');
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -48,7 +48,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/progress', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/progress', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -76,7 +76,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning']) {
+    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner');
     }
@@ -124,6 +124,31 @@ try {
     assert.equal(preview.rejected.length, 1);
     assert.equal(preview.totals.netPaise, 99900);
     console.log('PASS Admin origin checks, finance row limit, duplicates and invalid amounts');
+    const programme = {kind:'division',parentId:null,title:'Synthetic division',description:'ಕ'.repeat(1000),status:'draft',sortOrder:1,reason:'Validate programme manager'};
+    const division = await api('/api/admin/content','owner','POST',programme,201);
+    const course = {...programme,kind:'course',parentId:division.id,title:'Synthetic course',status:'published'};
+    await api('/api/admin/content','owner','POST',course,400);
+    await api('/api/admin/content','owner','POST',{...programme,...division,status:'published'});
+    await api('/api/admin/content','owner','POST',course,201);
+    const publicProgrammes = async () => {
+      const response=await get('/api/catalogue');assert.equal(response.status,200);
+      return (await response.json()).programmes;
+    };
+    assert.equal((await publicProgrammes()).length,2);
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:2,status:'paused'});
+    assert.equal((await publicProgrammes()).length,0);
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:2,status:'published'},409);
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:3,status:'published'});
+    assert.equal((await publicProgrammes()).length,2);
+    await api('/api/admin/content','owner','POST',{...programme,id:division.id,version:4,status:'archived'});
+    assert.equal((await publicProgrammes()).length,0);
+    const content=await api('/api/admin/content','owner');
+    assert.equal(content.nodes.length,2);assert.equal(content.audit.length,6);
+    assert(content.audit.every(entry=>entry.actorId==='synthetic-owner'));
+    assert.equal((await api('/api/admin/learning','owner')).learnerCount,1);
+    await api('/api/admin/content','owner','DELETE',{id:division.id},405);
+    await api('/api/admin/content','owner','POST',programme,403,'https://other.example.test');
+    console.log('PASS D1 programme hierarchy, publishing, pause/archive restoration, version conflicts and atomic audit');
     assert(!logs.includes("Can't read from request stream after response has been sent"), 'Request stream lifecycle error');
   }
 } catch (error) {

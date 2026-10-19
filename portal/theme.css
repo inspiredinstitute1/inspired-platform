@@ -332,4 +332,11 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
 .admin-checkbox-row input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--gold)}
 .admin-manager :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .admin-manager button:disabled{opacity:.6;cursor:wait}
+.programme-discovery[hidden]{display:none!important}
+.programme-discovery{margin-top:24px;overflow-wrap:anywhere}
+.programme-tree,.programme-tree ul{list-style:none;padding-left:0}
+.programme-tree ul{padding-left:16px;border-left:1px solid var(--line)}
+.programme-tree li{margin:16px 0;min-width:0;line-height:1.7}
+.programme-tree summary{min-height:48px;cursor:pointer}
+.programme-tree p{color:var(--muted);padding:4px 0;font-size:16px;line-height:1.7}
 @media(max-width:760px){.admin-manager .form-field,.admin-manager .small,.admin-checkbox-row{font-size:17px;line-height:1.7}.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{font-size:18px;min-height:50px}.admin-manager .hero-actions{align-items:stretch}.admin-manager .button{font-size:16px;line-height:1.5;max-width:100%}}
