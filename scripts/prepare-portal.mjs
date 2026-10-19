@@ -13,5 +13,5 @@ vm.runInContext(data,c);
 const bank=JSON.parse(vm.runInContext('JSON.stringify({tests:TESTS,notes:NOTES.map(n=>n.id),videos:VIDEOS.map(v=>v.id)})',c));
 fs.writeFileSync('lib/portal-catalogue.json',JSON.stringify(bank));
 const boot=fs.readFileSync('portal/cloud-boot.js','utf8');
-fs.writeFileSync('public/portal.bundle.js','(async function(){\n'+boot+'\n'+['catalogue.js','homophones.js','mock-test-7.js','social-admin.js','community-admin.js','finance-admin.js','app.js','cloud-sync.js'].map(f=>fs.readFileSync('portal/'+f,'utf8')).join('\n;\n')+'\n})();');
+fs.writeFileSync('public/portal.bundle.js','(async function(){\n'+boot+'\n'+['catalogue.js','homophones.js','mock-test-7.js','admin-ui.js','social-admin.js','community-admin.js','finance-admin.js','app.js','cloud-sync.js'].map(f=>fs.readFileSync('portal/'+f,'utf8')).join('\n;\n')+'\n})();');
 console.log('Prepared retained portal assets, shell, script bundle and scoring catalogue.');

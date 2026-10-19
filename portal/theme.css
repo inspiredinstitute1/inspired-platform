@@ -320,3 +320,16 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
 @media(max-width:360px){.source-quiz .question-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.theme-toggle{padding-left:8px;padding-right:8px}.hero{padding-left:18px;padding-right:18px}}
 @media(prefers-reduced-transparency:reduce){.mobile-bottom-nav{background:var(--fallback);-webkit-backdrop-filter:none;backdrop-filter:none}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.mobile-bottom-nav{background:var(--fallback)}}
+
+/* Admin controls share the portal's mobile typography and theme tokens. */
+.admin-manager,.admin-manager form,.admin-manager .split-columns>*{min-width:0}
+.admin-manager .form-field{min-width:0;font-size:16px;line-height:1.6}
+.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;font:inherit;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);min-height:48px}
+.admin-manager textarea{resize:vertical}
+.admin-manager .notice,.admin-manager [role="status"]{overflow-wrap:anywhere}
+.admin-manager .button{min-height:48px;white-space:normal;overflow-wrap:anywhere}
+.admin-checkbox-row{display:flex;align-items:center;gap:12px;min-height:48px;margin:18px 0;font-size:16px;line-height:1.6}
+.admin-checkbox-row input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--gold)}
+.admin-manager :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.admin-manager button:disabled{opacity:.6;cursor:wait}
+@media(max-width:760px){.admin-manager .form-field,.admin-manager .small,.admin-checkbox-row{font-size:17px;line-height:1.7}.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{font-size:18px;min-height:50px}.admin-manager .hero-actions{align-items:stretch}.admin-manager .button{font-size:16px;line-height:1.5;max-width:100%}}

@@ -141,7 +141,7 @@ $('#menu').addEventListener('click',()=>{let open=$('#sidebar').classList.toggle
 window.addEventListener('hashchange',()=>{if(['notes','videos'].includes(route())){currentFilter='All';listQuery='';savedOnly=false;}render();});
 document.addEventListener('click',e=>{let b=e.target.closest('[data-action]');if(!b)return;let {action,id,value}=b.dataset;
 if(action==='install-app')installPortalApp();
-if(action==='finance-clear'){const f=document.getElementById('finance-preview-form');if(f)f.reset();const r=document.getElementById('finance-preview-results');if(r)r.replaceChildren();}
+if(action==='finance-clear')clearFinancePreview();
 if(action==='community-toggle')toggleCommunityGroup(Number(id));
 if(action==='social-edit')editSocialLink(Number(id));
 if(action==='social-toggle')toggleSocialLink(Number(id));
