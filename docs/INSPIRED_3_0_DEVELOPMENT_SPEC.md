@@ -45,3 +45,18 @@ Keep APPX primary for premium content; website specializes in public discovery, 
 - No SMS OTP, paid Firebase functions/storage, paid AI APIs, or adding billing without explicit consent.
 - QA: auth/role isolation, unauthorized API requests, premium question leakage, scoring, migration/rollback, 320px viewport, PWA privacy, quota stress.
 - Build and test on development branch. No production deployment without explicit approval.
+
+
+## Admin-only Revenue & Finance dashboard
+- Private owner/Admin-only route, invisible to students and faculty. Enforce authorization on the server for every finance API, export and document, not just the navigation.
+- Track revenue sources separately: APPX course sales, APPX mock-test subscriptions, direct PhonePe/UPI payments, other verified gateways, offline/manual fees, workshops, and future university/skills programmes.
+- Import APPX payout/sales CSV or other authorized exports first. Do not claim automatic APPX integration until credentials/API capability and reconciliation have been validated.
+- Entry model: unique transaction/source reference, student identifier when appropriate, source, course, amount charged, discount/coupon, payment status, payment date, settlement date, gateway charges, refunds, taxes if applicable, net received, reconciliation state, currency INR, upload provenance.
+- Distinguish gross sales, discounts, platform fees, refunds, net settlements and outstanding receivables. Never double count APPX coupon activations for students who already paid directly via PhonePe; match and link transactions before calculating net course revenue.
+- Mark promotional coupon activations (e.g. low-value activation) separately from actual tuition receipts. Split regular course purchases and mock-test-only buyers.
+- Financial overview: today's, 7-day, monthly, yearly collections; income by source, division, course and payment type; outstanding settlements; refunds; fee deductions; trends and downloadable filtered CSV.
+- Expenses may be maintained in a separate ledger for faculty payments, software, marketing and operations. Profit views require expenses and should never label collections as profit.
+- Manual adjustment and transaction deletion are restricted: use correcting entries with immutable audit history rather than silent modification; mask sensitive payer details and enforce minimum retention.
+- UI must show last imported/synced timestamp, coverage window, completeness warnings, discrepancies and unreconciled payment count; never display fabricated or stale amounts as live.
+- Access to external financial accounts, imports, and any paid connector requires distinct explicit approval. No banking credentials, secrets or real transaction records in GitHub.
+- Finance dashboard and its module can be enabled/disabled in Admin's module manager without deleting prior ledger data.
