@@ -29,10 +29,12 @@ function snapshot(target){
  // SQLite store only after the local CLI process has closed its connections.
  const databaseDir=join(target.state,'v3/d1/miniflare-D1DatabaseObject'),databases=readdirSync(databaseDir).filter(name=>/^[a-f0-9]{64}\.sqlite$/.test(name));assert.equal(databases.length,1);
  const local=new DatabaseSync(join(databaseDir,databases[0]),{readOnly:true});try{assert.equal(local.prepare('PRAGMA integrity_check').get().integrity_check,'ok');}finally{local.close();}
- return{objects,rows};
+ const sequences=execute(target,'SELECT name,seq FROM sqlite_sequence ORDER BY name;')[0];
+ return{objects,rows,sequences};
 }
 function guards(target){for(const sql of ['DELETE FROM finance_approval_snapshots','UPDATE finance_verification_events SET reason=reason','DELETE FROM portal_module_audit','UPDATE governance_audit SET reason=reason']){assert.throws(()=>execute(target,sql),/Retain|append-only|immutable/);}execute(target,"UPDATE portal_modules SET enabled=0,version=version+1,changed_by='synthetic-recovery',change_reason='Synthetic restored practice guard check',updated_at=3 WHERE module_key='practice';");assert.throws(()=>execute(target,"UPDATE learner_progress SET payload='{\"attempts\":[{}],\"drafts\":{}}' WHERE user_id='synthetic-learner'"),/Practice is paused/);}
 execute(source,"UPDATE portal_modules SET enabled=0,show_navigation=0,version=version+1,changed_by='synthetic-recovery',change_reason='Synthetic pre-backup module setting',updated_at=1 WHERE module_key='library';");
+execute(source,"INSERT INTO social_links(id,platform,label,url,updated_at) VALUES(900001,'website','Synthetic deleted identity','https://example.test',1); DELETE FROM social_links WHERE id=900001;");
 const before=snapshot(source),backup=join(root,'synthetic-backup.sql');
 cli(source,['export','DB','--output',backup]);const backupHash=sha(readFileSync(backup));assert(readFileSync(backup).length>0);
 cli(restored,['execute','DB','--json','--file',backup]);assert.deepEqual(snapshot(restored),before,'Export/import must preserve all application records, audits and SQL objects exactly');
@@ -43,9 +45,14 @@ cli(restored,['execute','DB','--json','--file',reapply]);assert.deepEqual(snapsh
 // checkpoint into a THIRD empty target. Never overwrite an existing database.
 execute(source,"UPDATE portal_modules SET enabled=1,show_navigation=1,version=version+1,changed_by='synthetic-recovery',change_reason='Synthetic post-backup change',updated_at=2 WHERE module_key='library';");assert.notDeepEqual(snapshot(source),before);
 cli(rollback,['execute','DB','--json','--file',backup]);assert.deepEqual(snapshot(rollback),before,'Recovery checkpoint must exclude post-backup changes');assert.equal(sha(readFileSync(backup)),backupHash,'Retained backup changed');
+for(const target of [restored,rollback]){
+ const id=execute(target,"INSERT INTO social_links(platform,label,url,updated_at) VALUES('website','Synthetic post-recovery identity','https://example.test',4) RETURNING id;")[0][0].id;
+ assert(id>900001,'Recovered database reused a deleted ID');
+ assert.equal(execute(target,`SELECT COUNT(*) AS n FROM governance_audit WHERE kind='social' AND record_id=${id} AND version=1 AND action='create';`)[0][0].n,1);
+}
 guards(restored);guards(rollback);
-writeFileSync(join(root,'manifest.json'),JSON.stringify({syntheticOnly:true,remote:false,backupSHA256:backupHash,tables:Object.fromEntries(Object.entries(before.rows).map(([name,rows])=>[name,{rows:rows.length,sha256:sha(JSON.stringify(rows))}])),schemaObjects:before.objects.length,exactRoundTrip:true,reapplicationPreserved:true,checkpointRecovery:true,restoredGuards:true},null,2));
-console.log(`PASS local D1 recovery: ${Object.keys(before.rows).length} tables; exact rows/schema/audits, integrity, reapplication, immutable/practice guards and checkpoint restore into empty targets.`);
+writeFileSync(join(root,'manifest.json'),JSON.stringify({syntheticOnly:true,remote:false,backupSHA256:backupHash,tables:Object.fromEntries(Object.entries(before.rows).map(([name,rows])=>[name,{rows:rows.length,sha256:sha(JSON.stringify(rows))}])),schemaObjects:before.objects.length,sequences:before.sequences,deletedIdsPreserved:true,exactRoundTrip:true,reapplicationPreserved:true,checkpointRecovery:true,restoredGuards:true},null,2));
+console.log(`PASS local D1 recovery: ${Object.keys(before.rows).length} tables; exact rows/schema/audits/sequences, deleted-ID safety, integrity, reapplication, immutable/practice guards and checkpoint restore into empty targets.`);
 console.log('Synthetic local backup SHA-256: '+backupHash);
 console.log('Recovery state: '+root);
 console.log('Not tested: hosted D1/time-travel, production rollback, R2 recovery, provider/browser/mobile sessions.');

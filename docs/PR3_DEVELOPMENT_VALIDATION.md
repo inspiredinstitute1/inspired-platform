@@ -8,7 +8,7 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 286 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 288 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
@@ -16,7 +16,8 @@ All execution was local; no production database, deployment, DNS or main-branch 
 | `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all twenty admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
 | `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all twenty-two admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
-| `npm run test:recovery:local` | Passed: local SQL export/import preserves forty-two application tables and exact schema/audits; migration reapplication, checkpoint restore, integrity and recovered immutable/practice guards pass. See LOCAL_RECOVERY_VALIDATION.md. This is not hosted D1 or R2 recovery. |
+| `npm run test:recovery:local` | Passed: local SQL export/import preserves forty-two application tables and exact schema/audits/sequences and deleted-ID safety; migration reapplication, checkpoint restore, integrity and recovered immutable/practice guards pass. See LOCAL_RECOVERY_VALIDATION.md. This is not hosted recovery. |
+| `npm run test:storage-recovery:local` | Passed: four synthetic PDF objects restored with exact keys, bytes, SHA-256, HTTP/custom metadata and D1 PDF rows/audits. Status privacy, corruption/missing-object rejection, module pause and archiving pass through application services on local D1/R2. |
 | `git diff --check` | Passed. |
 
 Additional in-memory SQLite tests exercise social-link create/read/update/delete, community group enabling and membership upsert, migration integrity, duplicate transaction references, negative amounts and invalid foreign keys. These service tests use a D1-shaped adapter; they do not establish provider-authenticated browser behavior.
@@ -246,3 +247,7 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 - Remote staging/production migrations were not run. The twenty admin migrations remain explicit SQL files under `docs/migrations/`, outside the generated Drizzle migration journal.
 - Existing incomplete features remain: audit logging outside programme/resource/enrolment/faculty/material/proposal/PDF and import/review managers, verified learner/payment/community linkage, verified payment import/reconciliation and full-directory pagination. The public social feed is implemented in development; saved enabled destinations require review before release. Synthetic membership/payment statuses do not verify real payments or grant external group access.
 - Keep this PR a draft. Production migration and release require owner approval and the separate staging/backup checks.
+
+## PDF/object recovery and identity milestone
+
+See PR3_TEN_STEP_BATCH_03.md and LOCAL_RECOVERY_VALIDATION.md. Actual PDF bytes are now checked against the immutable upload hash before publication or delivery, with bounded reads. Two new regressions cover same-sized corruption and short/excess/failed streams. The local recovery manifest now compares all sqlite_sequence values and verifies that deleted social IDs are not reused after restore. No migration or dependency change was required; all checks use synthetic disposable local state.

@@ -23,6 +23,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Independent-verification request intake tied to exact current review approvals, with frozen expected claims, dispute/cancellation history and stale/superseded binding detection. No provider adapter is configured; this does not authenticate evidence or enable real posting.
 - Six audited section controls with independent navigation visibility, student route/server availability guards and retained history; Admin/account recovery stays accessible. Twelve-card note pagination, optional library cursor API and aggregate practice/repeated-error reports are implemented. See PR3_TEN_STEP_BATCH.md.
 - Social/community records now have versioned, reasoned, atomic before/after audit; bounded saved-Student lookup, group/member editing, paged rosters/history and discrepancy flags are implemented. They remain manual website records, not external membership or payment proof. See PR3_TEN_STEP_BATCH_02.md.
+- Local D1/R2 recovery now preserves four synthetic PDF objects, HTTP/custom metadata, PDF rows/audits and status guards; D1 recovery compares sequence counters and deleted-ID safety. Actual byte hashes are checked before PDF publication/delivery. Hosted recovery remains pending. See PR3_TEN_STEP_BATCH_03.md.
 - Progress/scoring/PWA/privacy regression coverage, build, type checking, lint and isolated local D1 migration validation.
 
 ## Feature work remaining

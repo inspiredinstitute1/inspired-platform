@@ -19,7 +19,8 @@
     "test:db:local": "node scripts/validate-local-d1.mjs",
     "test:runtime:local": "node scripts/smoke-local-worker.mjs",
     "test:roles:local": "node scripts/smoke-local-worker.mjs --roles",
-    "test:recovery:local": "node scripts/validate-local-recovery.mjs"
+    "test:recovery:local": "node scripts/validate-local-recovery.mjs",
+    "test:storage-recovery:local": "node scripts/validate-local-storage-recovery.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

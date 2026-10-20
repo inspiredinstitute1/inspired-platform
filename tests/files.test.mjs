@@ -82,3 +82,26 @@ test('PDF storage absence fails closed for upload, publication and download whil
   const note=await h.create();delete h.env.BUCKET;assert.equal((await h.upload()).status,503);assert.equal((await h.call({...note,status:'published'})).status,503);assert.equal((await h.download(note.id,{admin:true})).status,503);assert.equal((await h.call({...note,status:'archived'})).status,200);
  }finally{h.db.close()}
 });
+
+test('same-sized corrupt bytes with retained SHA metadata cannot be published or downloaded',async()=>{
+ const h=setup();try{
+  const note=await h.create(),object=[...h.objects.values()][0],original=object.bytes.slice();
+  object.bytes[30]^=1;
+  assert.equal((await h.call({...note,status:'published'})).status,409);
+  assert.equal((await h.download(note.id,{admin:true})).status,503);
+  assert.equal(h.db.prepare('SELECT version FROM pdf_materials').get().version,1);
+  object.bytes=original;assert.equal((await h.call({...note,status:'published'})).status,200);
+  object.bytes=original.slice();object.bytes[30]^=1;
+  assert.equal((await h.download(note.id)).status,503);
+ }finally{h.db.close()}
+});
+test('PDF reads reject truncated, excessive and failed streams before returning bytes',async()=>{
+ for(const failure of ['short','long','error']){
+  const h=setup();try{
+   const note=await h.create(),get=h.BUCKET.get;let cancelled=false;
+   h.BUCKET.get=async key=>{const object=await get(key);object.body=new ReadableStream({start(controller){if(failure==='error'){controller.error(Error('Synthetic read failure'));return;}controller.enqueue(new Uint8Array(object.size+(failure==='long'?1:-1)));if(failure==='short')controller.close();},cancel(){cancelled=true;}});return object;};
+   assert.equal((await h.download(note.id,{admin:true})).status,503);
+   if(failure==='long')assert(cancelled);
+  }finally{h.db.close()}
+ }
+});
