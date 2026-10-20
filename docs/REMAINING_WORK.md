@@ -22,6 +22,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 - Local-only synthetic journal rehearsal with atomic entry/audit writes, duplicate prevention, captured-scope/latest-decision checks and compensating reversals. It uses separate tables, is disabled by default and does not implement real posting or independent verification.
 - Independent-verification request intake tied to exact current review approvals, with frozen expected claims, dispute/cancellation history and stale/superseded binding detection. No provider adapter is configured; this does not authenticate evidence or enable real posting.
 - Six audited section controls with independent navigation visibility, student route/server availability guards and retained history; Admin/account recovery stays accessible. Twelve-card note pagination, optional library cursor API and aggregate practice/repeated-error reports are implemented. See PR3_TEN_STEP_BATCH.md.
+- Social/community records now have versioned, reasoned, atomic before/after audit; bounded saved-Student lookup, group/member editing, paged rosters/history and discrepancy flags are implemented. They remain manual website records, not external membership or payment proof. See PR3_TEN_STEP_BATCH_02.md.
 - Progress/scoring/PWA/privacy regression coverage, build, type checking, lint and isolated local D1 migration validation.
 
 ## Feature work remaining
@@ -35,13 +36,13 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 | Community | Confirmed learner/account/payment mappings, consented external identifiers, manual import/review, discrepancy reports and supported integrations. No assumed universal WhatsApp roster API or automatic removals. |
 | Navigation and controls | Broader configurable navigation/division landing pages and larger-catalogue search/filtering. Six fixed learning sections now have audited enable/pause and navigation switches; programme hierarchy/status remains separately managed. Account/Admin recovery and history are intentionally always reachable. |
 | Analytics | Deeper mastery/revision recommendations, item-quality and selected-batch/programme reports with valid cohort rules. Website participation, latest supported accuracy, seven-day practice activity and repeated-error aggregates are implemented without changing original attempts. |
-| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; audit/versioning for social links, community and future ledger writes. Import/review audits and programme/resource/enrolment/faculty/material/proposal and submission-permission/PDF audits already exist. |
+| Scale and audit | Pagination/search for large rosters/catalogues/audit lists; broader catalogue pagination and audit/versioning for future real ledger writes. Social/community versioning and retained audits are implemented. Import/review audits and programme/resource/enrolment/faculty/material/proposal and submission-permission/PDF audits already exist. |
 
 ## Verification and release work remaining
 
 1. Actual provider-authenticated owner/student sessions and gateway-header protection checks. Local identity simulations do not establish provider authentication.
 2. Real browser/mobile interaction at narrow widths, both themes, accessibility, PWA installation and a two-device account session.
-3. Remote isolated staging with hosted D1 backup/recovery, all explicit SQL migrations, integrity/row-count validation, R2 object backup/recovery and rollback verification. A disposable local D1 SQL-export/restore/checkpoint rehearsal now passes across forty application tables, exact schema/audits and recovered guards; this does not establish hosted or R2 recovery. See LOCAL_RECOVERY_VALIDATION.md. Admin migrations remain outside the Drizzle journal.
+3. Remote isolated staging with hosted D1 backup/recovery, all explicit SQL migrations, integrity/row-count validation, R2 object backup/recovery and rollback verification. A disposable local D1 SQL-export/restore/checkpoint rehearsal now passes across forty-two application tables, exact schema/audits and recovered guards; this does not establish hosted or R2 recovery. See LOCAL_RECOVERY_VALIDATION.md. Admin migrations remain outside the Drizzle journal.
 4. Review enabled social destinations for ownership/public intent before release. Previously enabled records become public-feed eligible; private paid-group invitations must not be published unintentionally.
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.

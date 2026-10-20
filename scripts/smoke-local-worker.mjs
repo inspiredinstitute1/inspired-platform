@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls','0020_social_community_audit'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -98,31 +98,40 @@ try {
     assert.equal((await api('/api/admin/learning', 'owner')).learnerCount, 1);
     console.log('PASS progress persistence, user isolation, stale-save conflicts and Admin exclusion');
 
-    const link = { platform: 'website', label: 'Synthetic local test', url: 'https://example.test', enabled: false, sortOrder: 1 };
+    const link = { platform: 'website', label: 'Synthetic local test', url: 'https://example.test', enabled: false, sortOrder: 1, version:0, reason:'Synthetic social change' };
     const created = await api('/api/admin/social-links', 'owner', 'POST', link, 201);
     const publicLinks=async()=>{const response=await get('/api/social-links');assert.equal(response.status,200);assert.match(response.headers.get('cache-control')??'',/no-store/);return(await response.json()).links;};
     assert.equal((await publicLinks()).length,0);
-    await api('/api/admin/social-links', 'owner', 'POST', { ...link, id: created.id, enabled: true });
+    await api('/api/admin/social-links', 'owner', 'POST', { ...link, id: created.id, version:1, enabled: true });
     assert.equal((await api('/api/admin/social-links', 'owner')).links[0].enabled, true);
     const published=await publicLinks();assert.equal(published.length,1);assert.deepEqual(Object.keys(published[0]).sort(),['label','platform','url']);
     await api('/api/admin/social-links','owner','POST',{...link,platform:'youtube',enabled:true},400);
-    await api('/api/admin/social-links', 'owner', 'DELETE', { id: created.id });
+    await api('/api/admin/social-links', 'owner', 'DELETE', { id: created.id,version:2,reason:'Synthetic social deletion' });
     assert.equal((await api('/api/admin/social-links', 'owner')).links.length, 0);
     assert.equal((await publicLinks()).length,0);
     console.log('PASS public social publication, hidden drafts, destination rules and immediate removal');
-    const group = await api('/api/admin/community', 'owner', 'POST', { action: 'createGroup', platform: 'telegram', title: 'Synthetic local group', programme: 'English', accessTier: 'premium_course' }, 201);
-    await api('/api/admin/community', 'owner', 'POST', { action: 'setGroupEnabled', id: group.id, enabled: true });
-    const member = { action: 'upsertMembership', groupId: group.id, learnerId: 'synthetic-student', membershipStatus: 'pending', paymentStatus: 'pending_verification' };
+    const group = await api('/api/admin/community', 'owner', 'POST', { version:0,reason:'Synthetic group record',action: 'createGroup', platform: 'telegram', title: 'Synthetic local group', programme: 'English', accessTier: 'premium_course' }, 201);
+    await api('/api/admin/community', 'owner', 'POST', { action: 'setGroupEnabled', id: group.id, enabled: true,version:1,reason:'Synthetic enabling' });
+    const member = { version:0,reason:'Synthetic membership review',action: 'upsertMembership', groupId: group.id, learnerId: 'synthetic-student', membershipStatus: 'pending', paymentStatus: 'pending_verification' };
     await api('/api/admin/community', 'owner', 'POST', member);
-    await api('/api/admin/community', 'owner', 'POST', { ...member, membershipStatus: 'confirmed' });
+    await api('/api/admin/community', 'owner', 'POST', { ...member,version:1, membershipStatus: 'confirmed' });
     const community = await api('/api/admin/community', 'owner');
     assert.equal(community.groups[0].enabled, 1);
     assert.equal(community.memberships.length, 1);
     assert.equal(community.memberships[0].verifiedAt, null);
     console.log('PASS persisted social CRUD, group enable and membership upsert through built Worker/D1');
+    assert.equal(community.memberships[0].version,2);assert(community.memberships[0].findings.includes('payment_not_independently_verified')||community.memberships[0].findings.includes('manual_review_required'));
+    await api('/api/admin/community','owner','POST',{...member,membershipStatus:'left'},409);
+    const accountChoices=await api('/api/admin/community?action=learners&q=student','owner');assert(accountChoices.learners.some(learner=>learner.id==='synthetic-student'));assert(!accountChoices.learners.some(learner=>learner.id==='synthetic-owner'));
+    const socialHistory=await api('/api/admin/governance-audit?kind=social&recordId='+created.id,'owner');assert.equal(socialHistory.items.length,3);assert.equal(socialHistory.items[0].action,'delete');assert.equal(socialHistory.items[0].actorId,'synthetic-owner');
+    const memberHistory=await api('/api/admin/governance-audit?kind=member&recordId='+community.memberships[0].id+'&limit=1','owner');assert.equal(memberHistory.items.length,1);assert(memberHistory.nextCursor);
+    await api('/api/admin/community','owner','POST',{...member,learnerId:'unknown-synthetic-account'},400);
+    const mockMembership=await api('/api/admin/community','owner','POST',{...member,version:2,membershipStatus:'confirmed',paymentStatus:'mock_only'});assert.equal(mockMembership.verification,'unverified');const mockRoster=await api('/api/admin/community?groupId='+group.id+'&limit=1','owner');assert(mockRoster.memberships[0].findings.includes('mock_only_excluded_from_premium_group'));assert.equal(mockRoster.providerSynced,false);
+    console.log('PASS D1 social/community retained audit, optimistic edits, trusted account choices, paged history and mock-only discrepancy flags without external group changes');
 
-    for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
-      await api(path, 'owner', 'POST', {}, 403, 'https://other.example.test');
+
+    for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
+      await api(path, 'owner', 'POST', {}, path==='/api/admin/governance-audit'?405:403, 'https://other.example.test');
     }
     await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: Array(201).fill({}) }, 400);
     await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: [], padding: 'x'.repeat(100001) }, 413);
@@ -217,7 +226,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/modules','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});

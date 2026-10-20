@@ -5,11 +5,11 @@ import {readFileSync} from 'node:fs';
 import {socialLinksEndpoint} from '../lib/social-links-service.mjs';
 import {communityEndpoint} from '../lib/community-service.mjs';
 
-const migrations=['drizzle/0000_far_dust.sql',...['0001_social_links','0002_community_membership','0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls'].map(n=>`docs/migrations/${n}.sql`)];
+const migrations=['drizzle/0000_far_dust.sql',...['0001_social_links','0002_community_membership','0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls','0020_social_community_audit'].map(n=>`docs/migrations/${n}.sql`)];
 function setup(){
  const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');
  for(const path of migrations)db.exec(readFileSync(path,'utf8'));
- const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return {results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){const r=statement.run(...values);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}});return wrap()}};
+ const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return {results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){const r=statement.run(...values);return {meta:{changes:Number(r.changes),last_row_id:Number(r.lastInsertRowid)}}}});return wrap()},async batch(statements){db.exec('BEGIN');try{const result=[];for(const statement of statements)result.push(await statement.run());db.exec('COMMIT');return result;}catch(error){db.exec('ROLLBACK');throw error;}}};
  return {db,env:{DB,PORTAL_ADMIN_EMAIL:'owner@example.test'}};
 }
 const owner={userId:'owner',email:'owner@example.test'};
@@ -30,13 +30,13 @@ test('migrations preserve existing rows when reapplied and enforce relationships
 test('social admin creates, reloads, updates and deletes persisted links',async()=>{
  const {db,env}=setup();const call=(method,body)=>socialLinksEndpoint(request(method,body),owner,env);
  try{
-  const data={platform:'website',label:'Synthetic website',url:'https://example.test',enabled:false,sortOrder:2};
+  const data={platform:'website',label:'Synthetic website',url:'https://example.test',enabled:false,sortOrder:2,version:0,reason:'Synthetic social change'};
   const created=await call('POST',data);assert.equal(created.status,201);const {id}=await created.json();
   let links=(await (await call('GET')).json()).links;assert.equal(links.length,1);assert.equal(links[0].enabled,false);
-  assert.equal((await call('POST',{...data,id,enabled:true})).status,200);
+  assert.equal((await call('POST',{...data,id,version:1,enabled:true})).status,200);
   links=(await (await call('GET')).json()).links;assert.equal(links[0].enabled,true);
-  assert.equal((await call('POST',{...data,id:999})).status,404);
-  assert.equal((await call('DELETE',{id})).status,200);
+  assert.equal((await call('POST',{...data,id:999,version:1})).status,409);
+  assert.equal((await call('DELETE',{id,version:2,reason:'Synthetic removal'})).status,200);
   assert.equal((await (await call('GET')).json()).links.length,0);
  }finally{db.close()}
 });
@@ -44,12 +44,13 @@ test('social admin creates, reloads, updates and deletes persisted links',async(
 test('community admin persists group state and upserts one unverified membership',async()=>{
  const {db,env}=setup();const call=body=>communityEndpoint(request(body?'POST':'GET',body),owner,env);
  try{
-  const created=await call({action:'createGroup',platform:'telegram',title:'Synthetic group',programme:'English',accessTier:'premium_course'});assert.equal(created.status,201);const {id}=await created.json();
+  db.exec("INSERT INTO learner_progress(user_id,email,display_name,payload,updated_at) VALUES('synthetic-student','student@example.test','Synthetic learner','{}',1)");
+  const created=await call({version:0,reason:'Synthetic group creation',action:'createGroup',platform:'telegram',title:'Synthetic group',programme:'English',accessTier:'premium_course'});assert.equal(created.status,201);const {id}=await created.json();
   assert.equal((await (await call()).json()).groups[0].enabled,0);
-  assert.equal((await call({action:'setGroupEnabled',id,enabled:true})).status,200);
-  const member={action:'upsertMembership',groupId:id,learnerId:'synthetic-student',membershipStatus:'pending',paymentStatus:'pending_verification'};
+  assert.equal((await call({action:'setGroupEnabled',id,enabled:true,version:1,reason:'Synthetic enabling'})).status,200);
+  const member={version:0,reason:'Synthetic membership review',action:'upsertMembership',groupId:id,learnerId:'synthetic-student',membershipStatus:'pending',paymentStatus:'pending_verification'};
   assert.equal((await call(member)).status,200);
-  assert.equal((await call({...member,membershipStatus:'confirmed'})).status,200);
+  assert.equal((await call({...member,version:1,membershipStatus:'confirmed'})).status,200);
   const data=await (await call()).json();assert.equal(data.groups[0].enabled,1);assert.equal(data.memberships.length,1);assert.equal(data.memberships[0].membershipStatus,'confirmed');assert.equal(data.memberships[0].verifiedAt,null);
   assert.equal((await call({...member,groupId:999})).status,404);
  }finally{db.close()}

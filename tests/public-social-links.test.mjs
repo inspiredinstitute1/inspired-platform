@@ -6,11 +6,11 @@ import vm from 'node:vm';
 import {socialDestination,socialLinksEndpoint,publicSocialLinksEndpoint} from '../lib/social-links-service.mjs';
 
 function setup(){
- const db=new DatabaseSync(':memory:');db.exec(readFileSync('docs/migrations/0001_social_links.sql','utf8'));
- const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async run(){const result=statement.run(...values);return{meta:{changes:Number(result.changes),last_row_id:Number(result.lastInsertRowid)}}}});return wrap()}};
+ const db=new DatabaseSync(':memory:');for(const file of ['0001_social_links','0002_community_membership','0020_social_community_audit'])db.exec(readFileSync('docs/migrations/'+file+'.sql','utf8'));
+ const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async run(){const result=statement.run(...values);return{meta:{changes:Number(result.changes),last_row_id:Number(result.lastInsertRowid)}}}});return wrap()},async batch(statements){db.exec('BEGIN');try{const result=[];for(const statement of statements)result.push(await statement.run());db.exec('COMMIT');return result;}catch(error){db.exec('ROLLBACK');throw error;}}};
  const env={DB,PORTAL_ADMIN_EMAIL:'owner@example.test'};
  const read=()=>publicSocialLinksEndpoint(new Request('https://local.test/api/social-links'),env);
- const write=body=>socialLinksEndpoint(new Request('https://local.test/api/admin/social-links',{method:'POST',headers:{origin:'https://local.test','content-type':'application/json'},body:JSON.stringify(body)}),{userId:'owner',email:'owner@example.test'},env);
+ const write=body=>socialLinksEndpoint(new Request('https://local.test/api/admin/social-links',{method:'POST',headers:{origin:'https://local.test','content-type':'application/json'},body:JSON.stringify({version:0,reason:'Synthetic social review',...body})}),{userId:'owner',email:'owner@example.test'},env);
  return{db,env,read,write};
 }
 
