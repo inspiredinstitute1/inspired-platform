@@ -8,8 +8,8 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 310 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
-| Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
+| `npm run test:all` | 312 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| Clean dependency installation | Latest separate checkout: fresh frozen-lockfile network install into an empty private store downloaded all 640 packages, passed the 842-entry policy check and native postinstalls, then passed tests/types/lint/build/concurrency/audit after applying the candidate patch. Node 24.19.0/pnpm 11.25.0. Lockfile unchanged. A preceding shared-cache offline attempt failed for missing policy metadata and is not counted as passing. See LOCAL_OPERATIONS_VALIDATION.md. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
 | `npm run build` | Passed all five Vinext/Vite build stages and emitted all thirty-four application routes. This builds artifacts without publishing them. |
@@ -259,3 +259,7 @@ Sixteen added service/UI regressions bring the current suite to 304 passing entr
 ## Release-review preparation milestone
 
 Six added release-input regressions bring the current suite to 310 passing entries. A read-only audit inventories source/build binding names and migration hashes, checks contiguous numbering and rejects rehearsal flags, fixture entry points and static-only packaging. It deliberately never asserts release readiness or hosted verification. The built Worker now explicitly asserts no-store on identity-dependent Admin/Student HTML; the full local role smoke passes. Build, types, lint and bundle syntax pass. No application behaviour or database schema changed in this preparation step. The isolated staging proposal and full not-run browser/hosted matrix are in PR3_RELEASE_REVIEW.md; real browser control remains unavailable and no preview restart/deployment occurred.
+
+## Non-browser operational milestone
+
+A fresh public-registry frozen-lockfile install and clean-checkout validation now pass without copying generated files or dependencies. Added a tested Node pin and bounded 25-account/four-maximum-PDF concurrency rehearsal. The rehearsal exposed a small-overflow 413 response lifecycle failure; bounded extra discarding (64 KiB, never accepted/forwarded) fixes the observed local path while preserving all route limits. Two regressions raise the current suite to 312 passing entries. Main build/type/lint, built Worker roles and twenty-migration checks pass; the patched fresh checkout also passes tests/type/lint/build/concurrency/release audit. See LOCAL_OPERATIONS_VALIDATION.md. No hosted/browser/quota verification or release approval is inferred.

@@ -21,7 +21,7 @@ test('API buffering leaves bodyless and non-API requests untouched', async () =>
   }
 });
 
-test('API buffering rejects oversized declared bodies without reading them', async () => {
+test('API buffering rejects oversized declared bodies even with a smaller actual body', async () => {
   const request = new Request('https://local.test/api/admin/community', { method: 'POST', headers: { 'content-length': '2000001' }, body: 'small actual body' });
   const result = await bufferApiRequest(request);
   assert.equal(result.status, 413);
@@ -31,7 +31,7 @@ test('API buffering rejects oversized declared bodies without reading them', asy
 test('API buffering enforces actual streamed bytes without trusting content-length', async () => {
   let cancelled = false;
   const body = new ReadableStream({
-    start(controller) { controller.enqueue(new Uint8Array(2000001)); },
+    start(controller) { controller.enqueue(new Uint8Array(2000000+64*1024+1)); },
     cancel() { cancelled = true; },
   });
   const request = new Request('https://local.test/api/admin/finance-preview', { method: 'POST', body, duplex: 'half' });
@@ -53,4 +53,15 @@ test('only PDF multipart uploads receive the bounded 6 MiB route allowance',asyn
  const json=new Request('https://local.test/api/admin/files',{method:'POST',headers:{'content-type':'application/json'},body:'x'.repeat(3001)});assert.equal((await bufferApiRequest(json)).status,413);
  const other=new Request('https://local.test/api/admin/community',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=synthetic'},body:new Uint8Array(2100000)});assert.equal((await bufferApiRequest(other)).status,413);
  const large=new Request('https://local.test/api/admin/files',{method:'POST',headers:{'content-type':'multipart/form-data; boundary=synthetic','content-length':String(6*1024*1024+1)},body:'small'});assert.equal((await bufferApiRequest(large)).status,413);
+});
+
+test('small transport overflows are drained before 413 without forwarding a body',async()=>{
+ const body=new ReadableStream({start(controller){controller.enqueue(new Uint8Array(2000001));controller.close();}});
+ const request=new Request('https://local.test/api/progress',{method:'PUT',headers:{'content-length':'2000001'},body,duplex:'half'});
+ const response=await bufferApiRequest(request);assert(response instanceof Response);assert.equal(response.status,413);assert(request.bodyUsed);
+});
+test('a misleading small-overflow length cannot bypass the absolute discard cap',async()=>{
+ let cancelled=false;const body=new ReadableStream({start(controller){controller.enqueue(new Uint8Array(2000000+64*1024+1));},cancel(){cancelled=true;}});
+ const request=new Request('https://local.test/api/progress',{method:'PUT',headers:{'content-length':'2000001'},body,duplex:'half'});
+ assert.equal((await bufferApiRequest(request)).status,413);assert(cancelled);
 });
