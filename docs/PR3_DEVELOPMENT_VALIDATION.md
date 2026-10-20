@@ -16,6 +16,7 @@ All execution was local; no production database, deployment, DNS or main-branch 
 | `npm run test:db:local` | Passed against Wrangler's local D1 implementation, using a fresh state directory and placeholder database ID. Applied the base migration and all nineteen admin migrations; reapplying the admin migrations preserved synthetic records. Foreign-key check returned no violations. |
 | `npm run test:runtime:local` | Passed against the built Worker running locally: homepage, bundle, manifest, service worker, offline page and legacy redirect. Anonymous requests to all twenty-one admin APIs and the progress API were rejected with private/no-store responses. |
 | `npm run test:roles:local` | Passed through built Worker routes and real local D1 using synthetic gateway identity headers: owner/student role rendering, all Admin API permissions, progress save/reload and cross-user isolation, stale-version conflicts, Admin exclusion from learner counts, social CRUD, community upsert, origin rejection, finance size/row limits, duplicate and invalid-amount handling. This does not verify provider sign-in. |
+| `npm run test:recovery:local` | Passed: local SQL export/import preserves forty application tables and exact schema/audits; migration reapplication, checkpoint restore, integrity and recovered immutable/practice guards pass. See LOCAL_RECOVERY_VALIDATION.md. This is not hosted D1 or R2 recovery. |
 | `git diff --check` | Passed. |
 
 Additional in-memory SQLite tests exercise social-link create/read/update/delete, community group enabling and membership upsert, migration integrity, duplicate transaction references, negative amounts and invalid foreign keys. These service tests use a D1-shaped adapter; they do not establish provider-authenticated browser behavior.
@@ -188,6 +189,13 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 - Preview amounts now explicitly describe selected-batch movements. Earlier original receipts are context only and never counted again. Later refunds can produce negative category/cash movements. Global peer reservations constrain both modes and are shown separately; external evidence/ledger conflicts participate in validation. No approval token, verified revenue, posting or access is created.
 - Nine service/database tests, three frontend tests and two additional policy tests pass; current total is 199. TypeScript, lint, bundle syntax and build pass (unchanged 28 routes/seventeen Admin APIs). Base plus fifteen explicit local migrations pass application/reapplication, cross-batch synthetic-link preservation and foreign-key checks.
 - Built Worker/local D1 verifies exact lookup, global activation/refund conflicts, excluded earlier receipts, negative batch movement and stale external reviews, with unchanged Student enrolments. All records remain synthetic. Real evidence/provider sign-in, browser/mobile and remote staging remain unverified. See FINANCE_CROSS_BATCH.md.
+
+## Local recovery verification milestone
+
+- Added a no-arguments local-only recovery command using a checked placeholder binding and fresh synthetic state. Wrangler export/import runs only against disposable targets. Exact row/schema comparisons cover forty application tables, audit values and all application triggers/indexes/views.
+- Restore/reapply preserves the pre-backup custom module setting and immutable finance/verification histories. A third empty target recovers the retained checkpoint after a post-backup source change. Recovered append-only guards and paused-practice write rejection pass. D1 foreign-key checks are clean; read-only local SQLite integrity checks return ok because D1 itself rejects integrity_check.
+- Recovery integration, lint and type checking pass; application baseline remains 273 tests and the previously validated 33-route build/local Worker. No application code or migration changes in this milestone.
+- Real browser/provider/mobile/two-device and remote staging checks remain unverified. No connected local browser is exposed in the current session, and there is no repair evidence for the earlier cloud preview failure. No hosted deployment was made. LOCAL_RECOVERY_VALIDATION.md distinguishes the completed rehearsal from hosted D1/time-travel, production rollback and R2 recovery still pending.
 
 ## Ten-step section-control, browsing and report batch
 

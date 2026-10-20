@@ -41,7 +41,7 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 
 1. Actual provider-authenticated owner/student sessions and gateway-header protection checks. Local identity simulations do not establish provider authentication.
 2. Real browser/mobile interaction at narrow widths, both themes, accessibility, PWA installation and a two-device account session.
-3. Remote isolated staging with backup, all explicit SQL migrations, integrity/row-count validation, R2 object backup/recovery and rollback verification. Admin migrations remain outside the Drizzle journal.
+3. Remote isolated staging with hosted D1 backup/recovery, all explicit SQL migrations, integrity/row-count validation, R2 object backup/recovery and rollback verification. A disposable local D1 SQL-export/restore/checkpoint rehearsal now passes across forty application tables, exact schema/audits and recovered guards; this does not establish hosted or R2 recovery. See LOCAL_RECOVERY_VALIDATION.md. Admin migrations remain outside the Drizzle journal.
 4. Review enabled social destinations for ownership/public intent before release. Previously enabled records become public-feed eligible; private paid-group invitations must not be published unintentionally.
 5. Release Node version, fresh-registry installation, load/quota and operational recovery checks as appropriate to the final scope.
 6. Owner approval before merging, deployment, production migrations, DNS or live-site changes.
