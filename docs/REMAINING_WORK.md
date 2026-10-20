@@ -40,6 +40,8 @@ All recent changes remain on draft PR #3. Working in development does not mean d
 | Analytics | Deeper mastery/revision recommendations, item-quality and selected-batch/programme reports with valid cohort rules. Website participation, latest supported accuracy, seven-day practice activity and repeated-error aggregates are implemented without changing original attempts. |
 | Scale and audit | Pagination/search for large rosters/catalogues/audit lists; broader catalogue pagination and audit/versioning for future real ledger writes. Social/community versioning and retained audits are implemented. Import/review audits and programme/resource/enrolment/faculty/material/proposal and submission-permission/PDF audits already exist. |
 
+Release review, explicit migration inventory and proposed isolated staging scope are prepared in PR3_RELEASE_REVIEW.md. Browser and hosted acceptance rows are explicitly not run; local input audit cannot approve a release.
+
 ## Verification and release work remaining
 
 1. Actual provider-authenticated owner/student sessions and gateway-header protection checks. Local identity simulations do not establish provider authentication.

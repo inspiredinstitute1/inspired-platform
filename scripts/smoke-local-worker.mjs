@@ -75,6 +75,7 @@ try {
     }
     for (const role of ['owner', 'student']) {
       const page = await get('/', { headers: identities[role] });
+      assert.match(page.headers.get('cache-control')||'',/no-store/,'Identity-dependent HTML must not be cached');
       const html = await page.text();
       assert.match(html,/id="public-social-links"/);
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
