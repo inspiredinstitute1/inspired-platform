@@ -34,3 +34,24 @@ test('paper review warns about duplicate keys, missing labels and answer positio
  assert.equal(r.labelled,1);assert.equal(r.unlabelled,2);assert.deepEqual(r.answerPositions,[2,1,0,0]);assert.deepEqual(r.duplicatePairs,[{first:1,repeat:2,keyConflict:true}]);assert.equal(r.maximumMarks,3);assert.equal(r.topics[0].questions,1);assert.equal(JSON.stringify(original),before);
 });
 test('import preview reports review data without saving any paper',async()=>{const h=setup();try{const result=await payload(await h.admin({...paper,action:'preview'}));assert.equal(result.review.questionCount,2);assert.equal(result.review.unlabelled,2);assert.equal(h.db.prepare('SELECT count(*) AS n FROM exam_papers').get().n,0);assert.equal((await h.admin({...paper,action:'preview'},student)).status,403);}finally{h.db.close();}});
+
+test('parallel starts and competing saves retain one attempt and one winning answer version',async()=>{const h=setup();try{
+ const id=await h.unlocked(),starts=await Promise.all([h.learner({action:'start',examId:id}),h.learner({action:'start',examId:id})]);
+ const [a,b]=await Promise.all(starts.map(payload));assert.equal(a.attempt.id,b.attempt.id);assert.equal(h.db.prepare('SELECT count(*) AS n FROM exam_attempts').get().n,1);
+ const saves=await Promise.all([[1,null],[2,null]].map(answers=>h.learner({action:'save',attemptId:a.attempt.id,version:1,answers})));
+ assert.deepEqual(saves.map(r=>r.status).sort(),[200,409]);const winner=await saves.find(r=>r.status===200).json();
+ const refreshed=await payload(await h.learner(undefined,student,'/api/exams?attemptId='+a.attempt.id));assert.deepEqual(refreshed.attempt.answers,winner.attempt.answers);assert.equal(refreshed.attempt.version,2);assert.equal(refreshed.attempt.deadline,a.attempt.deadline);
+ }finally{h.db.close();}});
+
+test('revocation between initial access read and save is enforced by the final SQL guard',async()=>{const h=setup();try{
+ const id=await h.unlocked(),a=await payload(await h.learner({action:'start',examId:id})),original=h.env.DB.prepare.bind(h.env.DB);let intercepted=false;
+ h.env.DB.prepare=sql=>{const statement=original(sql);if(!sql.startsWith('UPDATE exam_attempts SET answers_json'))return statement;return{...statement,bind(...values){const bound=statement.bind(...values);return{...bound,async run(){intercepted=true;h.db.exec('UPDATE exam_codes SET revoked=1');return bound.run();}};}};};
+ assert.equal((await h.learner({action:'save',attemptId:a.attempt.id,version:1,answers:[1,1]})).status,409);assert(intercepted);assert.equal(h.db.prepare('SELECT answers_json FROM exam_attempts').get().answers_json,'[null,null]');assert.equal(h.db.prepare('SELECT revoked FROM exam_grants').get().revoked,1);
+ }finally{h.db.close();}});
+
+test('database deadline rejects a save even when application clock is stale',async()=>{const h=setup(),realNow=Date.now;try{
+ const id=await h.unlocked(),now=realNow();h.db.prepare('INSERT INTO exam_attempts(id,exam_id,learner_id,started_at,deadline,answers_json) VALUES(?,?,?,?,?,?)').run('stale-clock',id,student.userId,now-120000,now-60000,'[null,null]');
+ Date.now=()=>now-90000;
+ assert.equal((await h.learner({action:'save',attemptId:'stale-clock',version:1,answers:[1,1]})).status,409);assert.equal(h.db.prepare("SELECT answers_json FROM exam_attempts WHERE id='stale-clock'").get().answers_json,'[null,null]');
+ Date.now=realNow;const final=await payload(await h.learner(undefined,student,'/api/exams?attemptId=stale-clock'));assert.equal(final.attempt.status,'submitted');assert.equal(final.result.score,0);assert.equal(final.result.skipped,2);
+ }finally{Date.now=realNow;h.db.close();}});

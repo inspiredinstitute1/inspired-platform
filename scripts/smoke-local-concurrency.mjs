@@ -36,6 +36,21 @@ try{
   assert.deepEqual(responses.map(r=>r.status).sort(),[200,409]);const winner=responses.find(r=>r.status===200).data;
   const current=await progress(person);assert.equal(current.data.version,2);assert.equal(current.data.payload.goal,winner.payload.goal);assert.equal(current.data.payload.profile.name,'Synthetic '+person.index);
  });
+ phase='mock-test concurrent saves and submissions';console.log('Checking '+phase);
+ async function examApi(path,user,body,status=200){const response=await fetchAs(path,user,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{});const data=await response.json();assert.equal(response.status,status,JSON.stringify(data));assert.match(response.headers.get('cache-control')||'',/no-store/);return data;}
+ const mock=await examApi('/api/admin/exams',owner,{action:'import',title:'Synthetic concurrent mock',durationMinutes:10,accessMode:'free',reason:'Disposable local concurrency validation',questions:Array.from({length:10},(_,i)=>({question:'Synthetic question '+i,options:['A','B','C','D'],answer:1,explanation:'Synthetic key.',subject:'Grammar',topic:'Synthetic topic'}))},201);
+ await examApi('/api/admin/exams',owner,{action:'status',examId:mock.id,status:'published',version:1,reason:'Local synthetic publication'});
+ await pool(people,2,async person=>{
+  const started=await examApi('/api/exams',person,{action:'start',examId:mock.id});
+  const answers=Array(10).fill(person.index%2?2:1),draft={action:'save',attemptId:started.attempt.id,version:1,answers};
+  const replies=await Promise.all([fetchAs('/api/exams',person,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(draft)}),fetchAs('/api/exams',person,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({...draft,answers:Array(10).fill(null)})})]);
+  assert.deepEqual(replies.map(r=>r.status).sort(),[200,409]);await Promise.all(replies.map(r=>r.arrayBuffer()));
+  const resumed=await examApi('/api/exams?attemptId='+started.attempt.id,person);assert.equal(resumed.attempt.version,2);assert.equal(resumed.attempt.deadline,started.attempt.deadline);
+  const result=await examApi('/api/exams',person,{action:'submit',attemptId:started.attempt.id,version:2,answers});assert.equal(result.result.score,person.index%2?-2.5:10);
+  const report=await examApi('/api/exams/analytics',person);assert.equal(report.attemptCount,1);assert.equal(report.overall.score,result.result.score);assert(!('learners' in report));
+ });
+ const mockReport=await examApi('/api/exams/analytics',owner);assert.equal(mockReport.attemptCount,25);assert.equal(mockReport.learners.length,25);assert.equal(mockReport.overall.correct,130);assert.equal(mockReport.overall.wrong,120);assert.equal(mockReport.overall.score,100);
+ console.log('PASS 25 local mock learners: paired saves yield one winner, immutable deadline, correct negative marking, private reports and exact cohort totals');
  // Four simultaneous maximum-size PDF reads, verifying actual returned bytes.
  phase='maximum-size PDF upload/publication';console.log('Checking '+phase);
  const sample=new TextDecoder().decode(syntheticPdf()),prefix=new TextEncoder().encode(sample.slice(0,sample.lastIndexOf('%%EOF'))+'%');
@@ -51,6 +66,6 @@ try{
  const healthy=await progress(people[0]);assert.equal(healthy.status,200);assert.equal(healthy.data.version,2);
  assert(!/Can't read from request stream|The script will never generate a response|Memory limit would be exceeded/i.test(logs),logs.slice(-2000));
  const sorted=[...latencies].sort((a,b)=>a-b),percentile=p=>Math.round(sorted[Math.ceil(sorted.length*p)-1]);
- const report={syntheticOnly:true,remote:false,accounts:25,maxProgressConcurrency:5,conflictingAccounts:25,pdfBytes:pdf.length,simultaneousPdfReads:4,requests,progressSamples:latencies.length,localLatencyMs:{p50:percentile(.5),p95:percentile(.95),max:Math.round(sorted.at(-1))},isolated:true,optimisticConflicts:true,exactPdfBytes:true,rejectionRecovery:true,hostedCapacityVerified:false};
+ const report={syntheticOnly:true,remote:false,accounts:25,maxProgressConcurrency:5,conflictingAccounts:25,mockLearners:25,mockSaveConflicts:25,mockCohortExact:true,pdfBytes:pdf.length,simultaneousPdfReads:4,requests,progressSamples:latencies.length,localLatencyMs:{p50:percentile(.5),p95:percentile(.95),max:Math.round(sorted.at(-1))},isolated:true,optimisticConflicts:true,exactPdfBytes:true,rejectionRecovery:true,hostedCapacityVerified:false};
  writeFileSync(join(state,'manifest.json'),JSON.stringify(report,null,2));console.log('PASS bounded local concurrency: 25 isolated synthetic accounts; every paired stale write yields one save/one conflict; four simultaneous 5 MiB PDF reads preserve exact SHA-256; oversized-request rejection recovers.');console.log(JSON.stringify(report));console.log('Evidence: '+state);console.log('Not measured: hosted CPU/memory/quotas, real traffic capacity, provider sign-in or browser behaviour.');
 }catch(error){throw new Error('Local concurrency failed during '+phase+': '+error.message+'\n'+logs.slice(-2000),{cause:error});}finally{worker.kill('SIGTERM');const timer=setTimeout(()=>worker.kill('SIGKILL'),3000);await new Promise(done=>{if(worker.exitCode!==null)done();else worker.once('exit',done);});clearTimeout(timer);}
