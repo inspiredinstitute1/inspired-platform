@@ -15,10 +15,10 @@ function setup(){
   else db.prepare('INSERT INTO pdf_materials(id,object_key,file_name,bytes,sha256,title,category,status,changed_by,change_reason,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').run(id,'private/key/'+id,'private-filename.pdf',100,'0'.repeat(64),title,'Grammar',status,'private-owner','Private audit reason',2);
   return id;
  }
- const request=(path='/api/library',method='GET',body)=>new Request('https://local.test'+path,{method,headers:{origin:'https://local.test','content-type':'application/json'},...(body===undefined?{}:{body:JSON.stringify(body)})});
+ const request=(path='/api/library',method='GET',body)=>new Request('https://local.test'+path,{method,headers:{origin:'https://local.test','content-type':'application/json','x-portal-account-id':student.userId},...(body===undefined?{}:{body:JSON.stringify(body)})});
  const get=(path='/api/library')=>libraryEndpoint(request(path),env);
- const put=(payload,version=0,user=student)=>progressEndpoint(request('/api/progress','PUT',{payload,version,userId:other.userId}),user,env);
- const progress=(user=student)=>progressEndpoint(request('/api/progress'),user,env);
+ const put=(payload,version=0,user=student)=>{const r=request('/api/progress','PUT',{payload,version,userId:other.userId});r.headers.set('x-portal-account-id',user.userId);return progressEndpoint(r,user,env);};
+ const progress=(user=student)=>{const r=request('/api/progress');r.headers.set('x-portal-account-id',user.userId);return progressEndpoint(r,user,env);};
  return{db,DB,env,note,request,get,put,progress};
 }
 test('unified library lists only published text/PDF metadata and bounded excerpts without private fields',async()=>{

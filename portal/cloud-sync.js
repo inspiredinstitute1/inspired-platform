@@ -21,19 +21,22 @@ function mergeCloud(base,local,remote){
  return out;
 }
 function persistAccount(){try{localStorage.setItem(STORE,JSON.stringify(cloud.user?{payload:state,base:cloud.base,version:cloud.version,pending:cloud.pending}:state));}catch(e){storageOK=false;}}
-function cloudMessage(){if(!cloud.user)return 'Progress saved on this device';if(cloud.saving)return 'Saving your progress…';if(cloud.error)return 'Not synced yet · your device copy is retained';if(cloud.pending)return 'Changes waiting to save';return 'Saved to your account';}
-function updateCloudStatus(){const el=$('#cloud-status');if(!el)return;el.className='cloud-status '+(cloud.error?'sync-error':cloud.pending||cloud.saving?'sync-pending':'sync-saved');el.innerHTML=`<span>${icon(cloud.error?'flag':'check')}${esc(cloudMessage())}</span>${!cloud.user?'<a class="text-link" href="#/account">Sign in & save</a>':''}${cloud.error&&cloud.user?'<button type="button" class="text-link" data-action="sync-now">Try again</button>':''}`;}
+function cloudMessage(){if(!cloud.user)return 'Progress saved on this device';if(cloud.blocked)return 'Account session changed · refresh to continue; your device copy is retained';if(cloud.saving)return 'Saving your progress…';if(cloud.error)return 'Not synced yet · your device copy is retained';if(cloud.pending)return 'Changes waiting to save';return 'Saved to your account';}
+function updateCloudStatus(){const el=$('#cloud-status');if(!el)return;el.className='cloud-status '+(cloud.error?'sync-error':cloud.pending||cloud.saving?'sync-pending':'sync-saved');el.innerHTML=`<span>${icon(cloud.error?'flag':'check')}${esc(cloudMessage())}</span>${!cloud.user?'<a class="text-link" href="#/account">Sign in & save</a>':''}${cloud.blocked?'<a class="text-link" href="/">Refresh account</a>':''}${cloud.error&&cloud.user&&!cloud.blocked?'<button type="button" class="text-link" data-action="sync-now">Try again</button>':''}`;}
 function progressNotice(){return `<div class="notice info">${esc(cloudMessage())}. ${cloud.user?'Your notes, bookmarks, completed classes and test history follow this account across devices.':'Sign in to keep your scores, bookmarks and unfinished practice across devices.'} APPX and YouTube progress remain separate.</div>`;}
-function queueCloudSave(){if(!cloud.user)return;cloud.pending=true;cloud.error=false;persistAccount();updateCloudStatus();clearTimeout(cloud.timer);cloud.timer=setTimeout(()=>syncProgress(),650);}
-async function accountFetch(url,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);try{return await fetch(url,{credentials:'same-origin',cache:'no-store',...options,signal:controller.signal});}finally{clearTimeout(timer);}}
+function queueCloudSave(){if(!cloud.user)return;cloud.pending=true;persistAccount();updateCloudStatus();clearTimeout(cloud.timer);if(cloud.blocked)return;cloud.error=false;cloud.timer=setTimeout(()=>syncProgress(),650);}
+async function accountFetch(url,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),10000);try{const response=await fetch(url,{credentials:'same-origin',cache:'no-store',...options,headers:{...options.headers,...(url==='/api/progress'?{'x-portal-account-id':encodeURIComponent(cloud.user.id)}:{})},signal:controller.signal});const data=await response.json();return{ok:response.ok,status:response.status,json:async()=>data};}finally{clearTimeout(timer);}}
+function checkAccountResponse(response,data){if(accountResponseChanged(response.status,data,cloud.user)){cloud.blocked=true;clearTimeout(cloud.timer);throw Error('Account session changed');}}
 async function syncProgress(pull=false){
- if(!cloud.user||cloud.saving)return;
+ if(!cloud.user||cloud.saving||cloud.blocked)return;
  cloud.saving=true;updateCloudStatus();
  try{
   // Reconcile the remote version first after an offline start or an explicit refresh.
-  if(pull||!cloud.loaded){const r=await accountFetch('/api/progress');if(!r.ok)throw new Error('Account unavailable');const remote=await r.json();state=mergeCloud(cloud.base,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;cloud.loaded=true;cloud.pending=!same(state,cloud.base);}
+  if(pull||!cloud.loaded){const r=await accountFetch('/api/progress'),remote=await r.json();checkAccountResponse(r,remote);if(!r.ok)throw new Error('Account unavailable');if(!validAccountEnvelope(remote,cloud.user))throw Error('Invalid progress response');state=mergeCloud(cloud.base,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;cloud.loaded=true;cloud.pending=!same(state,cloud.base);}
   for(let retry=0;cloud.pending&&retry<4;retry++){
    const sent=snapshot(),r=await accountFetch('/api/progress',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({version:cloud.version,payload:sent})}),remote=await r.json();
+   checkAccountResponse(r,remote);
+   if((r.ok||r.status===409)&&!validAccountEnvelope(remote,cloud.user))throw Error('Invalid progress response');
    if(r.status===409){state=mergeCloud(cloud.base,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;persistAccount();continue;}
    if(!r.ok)throw new Error(remote.error||'Save unavailable');
    state=mergeCloud(sent,state,remote.payload);cloud.base=remote.payload;cloud.version=remote.version;cloud.pending=!same(state,remote.payload);cloud.error=false;persistAccount();if(remote.unavailableResources?.length)toast('Some unavailable notes could not be added. Your other progress was saved.');

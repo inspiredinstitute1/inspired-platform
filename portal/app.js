@@ -58,7 +58,7 @@ const TESTS=[MOCK_TEST_7,{id:'grammar',title:'English Grammar Check',category:'G
 const boot=window.__PORTAL_BOOT__||{};
 const STORE=boot.storageKey||'inspired-guest-v2';
 let storageOK=true,state;const defaults=()=>({profile:null,read:[],saved:[],watched:[],attempts:[],drafts:{},activity:{},goal:5,customNotes:[]});
-let cloud={user:boot.user||null,version:boot.remote?.version||boot.cache?.version||0,base:boot.remote?.payload||boot.cache?.base||defaults(),pending:!!boot.cache?.pending,loaded:!!boot.remote,error:!!boot.user&&!boot.remote,saving:false,timer:null};
+let cloud={blocked:!!boot.accountBlocked,user:boot.user||null,version:boot.remote?.version||boot.cache?.version||0,base:boot.remote?.payload||boot.cache?.base||defaults(),pending:!!boot.cache?.pending,loaded:!!boot.remote,error:!!boot.user&&!boot.remote,saving:false,timer:null};
 try{
  if(boot.user){state=Object.assign(defaults(),boot.remote?.payload||boot.cache?.payload||{});if(boot.cache?.pending&&boot.remote)state=mergeCloud(boot.cache.base,boot.cache.payload,boot.remote.payload);if(boot.legacy&&isAdmin()){state=mergeCloud(defaults(),boot.legacy,state);cloud.pending=true;}if(boot.guest){state=mergeCloud(defaults(),boot.guest,state);cloud.pending=true;}cloud.pending=cloud.pending||!same(state,cloud.base);}
  else state=Object.assign(defaults(),JSON.parse(localStorage.getItem(STORE)||'null')||{});

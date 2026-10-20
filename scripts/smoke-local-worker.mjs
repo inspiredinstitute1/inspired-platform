@@ -68,7 +68,7 @@ try {
       other: { 'oai-authenticated-user-id': 'synthetic-other', 'oai-authenticated-user-email': 'other@example.test' },
     };
     async function api(path, role, method = 'GET', body, status = 200, origin = base) {
-      const response = await get(path, { method, headers: { ...identities[role], origin, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+      const response = await get(path, { method, headers: { ...identities[role], ...(path==='/api/progress'?{'x-portal-account-id':identities[role]['oai-authenticated-user-id']}:{}), origin, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
       assert.equal(response.status, status, `${role} ${method} ${path}: ${response.status === status ? '' : await response.text()}`);
       assert.match(response.headers.get('cache-control') ?? '', /no-store/);
       return response.json();
@@ -93,6 +93,14 @@ try {
     assert.equal((await api('/api/progress', 'student')).payload.goal, 7);
     assert.equal((await api('/api/progress', 'other')).version, 0);
     await api('/api/progress', 'student', 'PUT', { version: 0, payload: initial.payload }, 409);
+    // Simulate an already-open tab after the trusted session changes accounts.
+    for(const method of ['GET','PUT']){
+      const response=await get('/api/progress',{method,headers:{...identities.other,origin:base,'content-type':'application/json','x-portal-account-id':'synthetic-student'},...(method==='PUT'?{body:JSON.stringify({version:0,payload:{...initial.payload,goal:7}})}:{})});
+      assert.equal(response.status,409);const data=await response.json();assert.equal(data.code,'ACCOUNT_CHANGED');assert(!('payload' in data));assert(!('user' in data));assert.match(response.headers.get('cache-control'),/no-store/);
+    }
+    const missingBinding=await get('/api/progress',{method:'PUT',headers:{...identities.student,origin:base,'content-type':'application/json'},body:JSON.stringify({version:1,payload:initial.payload})});
+    assert.equal(missingBinding.status,428);assert.equal((await api('/api/progress','other')).version,0);assert.equal((await api('/api/progress','student')).version,1);
+    console.log('PASS stale-tab account binding: mismatched session reads/writes rejected without payload; missing write binding requires refresh; both account records preserved');
     const owner = await api('/api/progress', 'owner');
     await api('/api/progress', 'owner', 'PUT', { version: 0, payload: owner.payload });
     assert.equal((await api('/api/admin/learning', 'owner')).learnerCount, 1);

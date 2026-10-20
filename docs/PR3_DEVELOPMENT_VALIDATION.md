@@ -8,7 +8,7 @@ All execution was local; no production database, deployment, DNS or main-branch 
 
 | Check | Result |
 | --- | --- |
-| `npm run test:all` | 288 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
+| `npm run test:all` | 304 test entries passed, zero failures or skips. Covers authorization, origin checks, scoped progress/scoring, PWA caching, reconciliation, database-backed admin services, bounded request-body handling and Admin form/preview state. |
 | Clean dependency installation | `pnpm install --offline --frozen-lockfile --store-dir /workspace/.sites-runtime/pnpm-store --reporter append-only` restored all 640 packages in a separate checkout, with native postinstall completion and no lockfile changes. Uses cached package/policy metadata; does not verify fresh registry/network access. |
 | `npm run typecheck` | Passed. Finance preview response helper now has an explicit `unknown` body type. |
 | `npm run lint` | Passed with no warnings. Added the missing ESLint 9 flat configuration; generated files are ignored. The retained shell's intentional public CSS links have a file-scoped exemption. |
@@ -251,3 +251,7 @@ The local validation scripts reject a non-placeholder database ID and explicitly
 ## PDF/object recovery and identity milestone
 
 See PR3_TEN_STEP_BATCH_03.md and LOCAL_RECOVERY_VALIDATION.md. Actual PDF bytes are now checked against the immutable upload hash before publication or delivery, with bounded reads. Two new regressions cover same-sized corruption and short/excess/failed streams. The local recovery manifest now compares all sqlite_sequence values and verifies that deleted social IDs are not reused after restore. No migration or dependency change was required; all checks use synthetic disposable local state.
+
+## Account-bound progress milestone
+
+Sixteen added service/UI regressions bring the current suite to 304 passing entries. Account-bound GET/PUT requests reject stale-tab session mismatches before database access; PUT now requires the precondition. Same-account version conflicts include authenticated identity for reconciliation. Boot/sync validate identity, role, version and main container shapes before merging; changed sessions pause sync with pending work retained under its original account key. The timeout covers JSON-body reads. Built-Worker/local D1 checks verify mismatched reads/writes and missing write bindings without changing either account record. These use synthetic gateway identity headers, not actual provider sign-in. See ACCOUNT_PROGRESS_SYNC.md and PR3_TEN_STEP_BATCH_04.md. Build, types, lint, bundle syntax and local base-plus-twenty-migration application/reapplication pass; no dependency or schema change.

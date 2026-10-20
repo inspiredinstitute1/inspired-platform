@@ -18,6 +18,6 @@ const resources=JSON.parse(vm.runInContext(`JSON.stringify([
  ...TESTS.map(t=>({kind:'test',id:t.id,title:t.title,href:'#/test/'+encodeURIComponent(t.id)}))
 ])`,c));
 fs.writeFileSync('lib/resource-catalogue.json',JSON.stringify(resources));
-const boot=fs.readFileSync('portal/cloud-boot.js','utf8');
+const boot=fs.readFileSync('portal/account-contract.js','utf8')+'\n'+fs.readFileSync('portal/cloud-boot.js','utf8');
 fs.writeFileSync('public/portal.bundle.js','(async function(){\n'+boot+'\n'+['catalogue.js','homophones.js','mock-test-7.js','admin-ui.js','module-navigation.js','module-admin.js','material-admin.js','file-admin.js','content-admin.js','resource-admin.js','enrolment-admin.js','faculty-admin.js','faculty-notes.js','social-admin.js','community-admin.js','governance-admin.js','finance-admin.js','finance-import-admin.js','finance-review-admin.js','finance-ledger-admin.js','finance-evidence-admin.js','finance-payment-links-admin.js','finance-approvals-admin.js','finance-verification-admin.js','learning-library.js','app.js','cloud-sync.js'].map(f=>fs.readFileSync('portal/'+f,'utf8')).join('\n;\n')+'\n})();');
 console.log('Prepared retained portal assets, shell, script bundle and scoring catalogue.');
