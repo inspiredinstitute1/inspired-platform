@@ -78,6 +78,7 @@ try {
     {
     const examBody={title:'SYNTHETIC launch rehearsal',durationMinutes:1,accessMode:'paid',reason:'Disposable local mock validation',questions:Array.from({length:10},(_,i)=>({question:'Synthetic question '+(i+1),options:['A','B','C','D'],answer:1,explanation:'Synthetic answer for runtime verification.',subject:'Grammar',topic:i<5?'Nouns':'Verbs',positiveMarks:1,negativeMarks:.25}))};
     await api('/api/admin/exams','student','POST',{...examBody,action:'import'},403);
+    const examPreview=await api('/api/admin/exams','owner','POST',{...examBody,action:'preview'});assert.equal(examPreview.review.labelled,10);assert.equal(examPreview.review.unlabelled,0);assert.deepEqual(examPreview.review.answerPositions,[10,0,0,0]);
     const imported=await api('/api/admin/exams','owner','POST',{...examBody,action:'import'},201);
     assert.equal((await api('/api/exams','student')).papers.length,0);
     await api('/api/admin/exams','owner','POST',{action:'status',examId:imported.id,status:'published',version:1,reason:'Synthetic reviewed paper'});

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import {adminExamsEndpoint,examsEndpoint,parseExamCSV,validatePaper} from '../lib/exam-service.mjs';
+import {adminExamsEndpoint,examsEndpoint,parseExamCSV,validatePaper,paperImportReview} from '../lib/exam-service.mjs';
 const owner={userId:'owner',email:'owner@example.test'},student={userId:'student',email:'student@example.test'},other={userId:'other',email:'other@example.test'};
 const paper={title:'Synthetic grammar',durationMinutes:1,accessMode:'paid',questions:[{question:'Choose the noun.',options:['Book','Quickly','Very','And'],answer:1,explanation:'A book is a noun.'},{question:'Choose the verb.',options:['Run','Blue','Desk','And'],answer:1,explanation:'Run is a verb.'}],reason:'Synthetic development verification'};
 function setup(){const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');const sql=readFileSync('docs/migrations/0021_paid_mock_exams.sql','utf8');db.exec(sql);const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){return{meta:{changes:Number(statement.run(...values).changes)}}}});return wrap();}};const env={DB,PORTAL_ADMIN_EMAIL:owner.email};const req=(body,path='/api/exams',headers={})=>new Request('https://local.test'+path,{method:body?'POST':'GET',headers:{origin:'https://local.test','content-type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});const admin=(body,user=owner,path='/api/admin/exams')=>adminExamsEndpoint(req(body,path),user,env);const learner=(body,user=student,path='/api/exams')=>examsEndpoint(req(body,path),user,env);async function create(mode='paid'){const r=await admin({...paper,accessMode:mode,action:'import'});assert.equal(r.status,201,await r.clone().text());const p=await r.json();assert.equal((await admin({action:'status',examId:p.id,version:1,status:'published',reason:'Reviewed synthetic paper'})).status,200);return p.id;}async function code(id,email=student.email){const r=await admin({action:'issue-code',examId:id,email,validDays:1,paymentReference:'SYNTHETIC payment reference',paymentConfirmed:true});assert.equal(r.status,201,await r.clone().text());return(await r.json()).code;}async function unlocked(){const id=await create(),raw=await code(id);assert.equal((await learner({action:'redeem',code:raw})).status,200);return id;}return{db,sql,env,req,admin,learner,create,code,unlocked};}
@@ -23,3 +23,14 @@ test('explicit CSV and JSON marks match +1 / -0.25; conflicting or blank marks a
  assert.throws(()=>validatePaper({...paper,questions:[{...paper.questions[0],negativeMarks:1}]}),/requires positive marks/);
  assert.equal(validatePaper(paper).questions[0].negativeMarks,.25);
 });
+
+test('CSV rejects trailing text and illegal embedded quotes while preserving escaped quotes, BOM and CRLF',()=>{
+ const header='question,option1,option2,option3,option4,answer,solution\r\n';
+ for(const question of ['"Which?"junk','Which"bad','"Which?""'])assert.throws(()=>parseExamCSV(header+question+',A,B,C,D,1,Explanation'),/quote|Unclosed/);
+ const parsed=parseExamCSV('\uFEFF'+header+'"A ""quoted"" question",A,B,C,D,1,"Line 1\r\nLine 2"\r\n');assert.equal(parsed[0].question,'A "quoted" question');assert.equal(parsed[0].explanation,'Line 1\r\nLine 2');
+});
+test('paper review warns about duplicate keys, missing labels and answer positions without changing content',()=>{
+ const original=validatePaper({...paper,questions:[{...paper.questions[0],subject:'Grammar',topic:'Nouns'},{...paper.questions[0],answer:2},paper.questions[1]]});const before=JSON.stringify(original),r=paperImportReview(original);
+ assert.equal(r.labelled,1);assert.equal(r.unlabelled,2);assert.deepEqual(r.answerPositions,[2,1,0,0]);assert.deepEqual(r.duplicatePairs,[{first:1,repeat:2,keyConflict:true}]);assert.equal(r.maximumMarks,3);assert.equal(r.topics[0].questions,1);assert.equal(JSON.stringify(original),before);
+});
+test('import preview reports review data without saving any paper',async()=>{const h=setup();try{const result=await payload(await h.admin({...paper,action:'preview'}));assert.equal(result.review.questionCount,2);assert.equal(result.review.unlabelled,2);assert.equal(h.db.prepare('SELECT count(*) AS n FROM exam_papers').get().n,0);assert.equal((await h.admin({...paper,action:'preview'},student)).status,403);}finally{h.db.close();}});
