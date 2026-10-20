@@ -181,7 +181,7 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
  :root{font-size:18px;scroll-padding-bottom:100px}
  body{line-height:1.7;-webkit-text-size-adjust:100%;text-size-adjust:100%}
  .app-shell{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
- .mobile-bottom-nav{position:fixed;inset:auto 0 0;z-index:35;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));background:var(--sidebar-glass);border-top:1px solid var(--accent-line);box-shadow:0 -8px 28px rgba(0,0,0,.14),inset 0 1px 0 var(--glass-edge);-webkit-backdrop-filter:blur(24px) saturate(125%);backdrop-filter:blur(24px) saturate(125%)}
+ .mobile-bottom-nav{position:fixed;inset:auto 0 0;z-index:35;display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));background:var(--sidebar-glass);border-top:1px solid var(--accent-line);box-shadow:0 -8px 28px rgba(0,0,0,.14),inset 0 1px 0 var(--glass-edge);-webkit-backdrop-filter:blur(24px) saturate(125%);backdrop-filter:blur(24px) saturate(125%)}
  .mobile-nav-item{min-width:0;min-height:60px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:7px 2px;border:1px solid transparent;border-radius:12px;font-size:12px;font-weight:650;line-height:1.25;color:var(--muted);white-space:nowrap}
  .mobile-nav-item .icon{width:23px;height:23px;stroke-width:1.85}
  .mobile-nav-item.active{color:var(--gold);background:var(--accent-wash);border-color:var(--accent-line);box-shadow:inset 0 1px 0 var(--glass-edge)}

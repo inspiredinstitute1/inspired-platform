@@ -1,4 +1,5 @@
 'use strict';
+let noteListPage=1;
 let publishedLibrary=[],libraryLoading=true,libraryError=false,libraryRequestVersion=0;
 const libraryRoutes=['home','notes','search','progress'];
 function noteRoute(note){return(note.source==='authored'?'material/':note.source==='pdf'?'pdf/':'notes/')+note.id;}
@@ -42,3 +43,5 @@ async function loadUploadedPdf(id){
   const note=data.note;target.innerHTML=`<a class="text-link" href="#/notes">← Free study notes</a><p class="eyebrow">${esc(note.category)}</p><h1>${esc(note.title)}</h1><p>${(Number(note.bytes)/1024).toFixed(1)} KiB · Free PDF</p><p><a class="button" href="/api/files?id=${esc(note.id)}">Download PDF</a></p><p class="small muted">Read the downloaded document, then mark it complete here. Downloading alone does not mark it complete.</p>${readingActions(note)}`;
  }catch(error){if(target.isConnected)target.textContent=error.message;}
 }
+
+function pagedNoteCards(notes){const size=12,pages=Math.max(1,Math.ceil(notes.length/size));noteListPage=Math.min(pages,Math.max(1,noteListPage));const start=(noteListPage-1)*size;return `<p class="small muted" role="status">Showing ${start+1}–${Math.min(start+size,notes.length)} of ${notes.length} matching notes</p><div class="resource-grid">${notes.slice(start,start+size).map(noteCard).join('')}</div>${pages>1?`<nav class="hero-actions" aria-label="Study notes pages"><button class="button secondary" type="button" data-action="notes-page" data-value="${noteListPage-1}" ${noteListPage===1?'disabled':''}>Previous</button><span>Page ${noteListPage} of ${pages}</span><button class="button secondary" type="button" data-action="notes-page" data-value="${noteListPage+1}" ${noteListPage===pages?'disabled':''}>Next</button></nav>`:''}`;}

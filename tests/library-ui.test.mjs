@@ -8,7 +8,7 @@ const fixture=(source,n,title='New lesson',category='ಹೊಸ ವಿಭಾಗ')
 const deferred=()=>{let resolve;const promise=new Promise(r=>{resolve=r});return{resolve,promise}};
 const response=notes=>({ok:true,json:async()=>({notes})});
 function setup(globals={}){
- const context=vm.createContext({esc,NOTES:[{id:'original',title:'Original catalogue',category:'Grammar',description:'Original note',minutes:2}],state:{saved:[],read:[],customNotes:[]},currentFilter:'All',listQuery:'',savedOnly:false,VIDEOS:[],TESTS:[],icon:()=>'',route:()=> 'notes',intro:()=>'',empty:()=>'<p>No matching notes</p>',document:{getElementById:()=>null},render:()=>{},...globals});
+ const context=vm.createContext({moduleEnabled:()=>true,esc,NOTES:[{id:'original',title:'Original catalogue',category:'Grammar',description:'Original note',minutes:2}],state:{saved:[],read:[],customNotes:[]},currentFilter:'All',listQuery:'',savedOnly:false,VIDEOS:[],TESTS:[],icon:()=>'',route:()=> 'notes',intro:()=>'',empty:()=>'<p>No matching notes</p>',document:{getElementById:()=>null},render:()=>{},...globals});
  vm.runInContext(readFileSync('portal/learning-library.js','utf8'),context);vm.runInContext('const allNotes=()=>[...NOTES,...state.customNotes,...publishedLibrary];',context);
  const app=readFileSync('portal/app.js','utf8');vm.runInContext(app.slice(app.indexOf('function bookmarkButton'),app.indexOf('function homophoneCards')),context);vm.runInContext(app.slice(app.indexOf('function searchPage'),app.indexOf('function notFound')),context);
  return{context,seed(notes){context.metadata=notes;vm.runInContext('publishedLibrary=normaliseLibraryMetadata(metadata);libraryLoading=false;libraryError=false;',context)},notes(){return JSON.parse(vm.runInContext('JSON.stringify(publishedLibrary)',context))}};

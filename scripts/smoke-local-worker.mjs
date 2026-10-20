@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -41,7 +41,7 @@ try {
     worker.stderr.on('data', output);
   });
   const get = (path, options) => fetch(base + path, { signal: AbortSignal.timeout(10000), ...options });
-  for (const path of ['/', '/portal.bundle.js', '/manifest.webmanifest', '/sw.js', '/offline.html', '/finance-import-template.csv']) {
+  for (const path of ['/', '/api/modules', '/portal.bundle.js', '/manifest.webmanifest', '/sw.js', '/offline.html', '/finance-import-template.csv']) {
     const response = await get(path);
     assert.equal(response.status, 200, path);
     await response.arrayBuffer();
@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -80,7 +80,7 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
       await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
     }
@@ -121,7 +121,7 @@ try {
     assert.equal(community.memberships[0].verifiedAt, null);
     console.log('PASS persisted social CRUD, group enable and membership upsert through built Worker/D1');
 
-    for (const path of ['/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
+    for (const path of ['/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
       await api(path, 'owner', 'POST', {}, 403, 'https://other.example.test');
     }
     await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: Array(201).fill({}) }, 400);
@@ -217,7 +217,7 @@ try {
     assert.equal((await api('/api/faculty?facultyId=synthetic-student','other')).courses.length,0);
     let teacherPage=await(await get('/',{headers:identities.student})).text();
     let teacherIdentity=JSON.parse(teacherPage.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)[1]);assert.equal(teacherIdentity.role,'Student');assert.equal(teacherIdentity.teachingAccess,true);
-    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/social-links'])await api(path,'student','POST',{},403);
+    for(const path of ['/api/admin/content','/api/admin/resources','/api/admin/enrolments','/api/admin/faculty','/api/admin/materials','/api/admin/faculty-notes','/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review','/api/admin/files','/api/admin/community','/api/admin/modules','/api/admin/social-links'])await api(path,'student','POST',{},403);
     await api('/api/admin/finance-preview','student','POST',{transactions:[]},403);
     await api('/api/faculty','student','POST',{},405);
     await api('/api/admin/faculty','owner','POST',{...assignment,...grant,version:2,enabled:false});
@@ -457,6 +457,17 @@ try {
     await api(verificationPath,'owner','POST',{...verificationDispute,requestId:crypto.randomUUID(),action:'cancel',version:1},409);await api(verificationPath,'owner','POST',{...verificationDispute,requestId:crypto.randomUUID(),action:'cancel',version:2},201);const verificationClosed=await api(verificationPath+'?taskId='+verificationTask.id,'owner');assert.equal(verificationClosed.task.status,'cancelled');assert.equal(verificationClosed.events.length,3);assert.equal(verificationClosed.verification,'unverified');
     await api(verificationPath,'owner','POST',verificationBody,403,'https://other.example.test');await api(verificationPath,'owner','DELETE',{},405);assert.deepEqual(await api('/api/enrolments','student'),beforeReviewAccess);
     console.log('PASS D1 independent-verification request queue: exact expected claims, no provider authentication, retry/audit preservation, hold supersession, disputes and cancellation');
+
+    for(const index of [1,2]){const pagingNote={title:'Synthetic paging note '+index,category:'Grammar',body:'Synthetic paging body',status:'draft',reason:'Synthetic dedicated paging fixture'};const pagingDraft=await api('/api/admin/materials','owner','POST',pagingNote,201);await api('/api/admin/materials','owner','POST',{...pagingNote,id:pagingDraft.id,version:1,status:'published'});}
+    const modulePath='/api/admin/modules';const moduleConfig=await api(modulePath,'owner');assert.equal(moduleConfig.modules.length,6);assert(moduleConfig.modules.every(item=>item.enabled));
+    const setModule=async(key,enabled,version=1,showNavigation=true)=>api(modulePath,'owner','POST',{key,enabled,showNavigation,version,reason:'Synthetic section availability check'});
+    await setModule('library',false);await api('/api/library','owner','GET',undefined,503);await api('/api/materials','owner','GET',undefined,503);await api('/api/files?id=pdf-00000000-0000-4000-8000-000000000000','owner','GET',undefined,503);await api('/api/admin/materials','owner');await setModule('library',true,2,false);const firstLibraryPage=await api('/api/library?limit=1','owner');assert.equal(firstLibraryPage.notes.length,1);assert(firstLibraryPage.nextCursor);const secondLibraryPage=await api('/api/library?limit=1&cursor='+encodeURIComponent(firstLibraryPage.nextCursor),'owner');assert.equal(secondLibraryPage.notes.length,1);assert.notEqual(firstLibraryPage.notes[0].id,secondLibraryPage.notes[0].id);
+    const publicModuleResponse=await get('/api/modules');const publicModuleData=await publicModuleResponse.json();assert.equal(publicModuleData.modules.find(item=>item.key==='library').showNavigation,false);assert(!JSON.stringify(publicModuleData).includes('Synthetic section'));
+    await setModule('programmes',false);await api('/api/catalogue','student','GET',undefined,503);await api('/api/enrolments','student','GET',undefined,503);await setModule('programmes',true,2);
+    await setModule('teaching',false);await api('/api/faculty','student','GET',undefined,503);await api('/api/faculty-notes','student','GET',undefined,503);await setModule('teaching',true,2);
+    await setModule('practice',false);const pausedProgress=await api('/api/progress','student');await api('/api/progress','student','PUT',{version:pausedProgress.version,payload:{...pausedProgress.payload,attempts:[...pausedProgress.payload.attempts,{id:'synthetic-paused-practice',testId:'grammar',answers:[1,2,0,3,1],finishedAt:Date.now()}]}},503);assert.deepEqual((await api('/api/progress','student')).payload.attempts,pausedProgress.payload.attempts);await setModule('practice',true,2);
+    const report=await api('/api/admin/learning','owner');assert(report.report);assert.equal(report.report.learnerAccounts,2);assert.match(report.report.basis,/not syllabus coverage/);assert.equal((await api(modulePath,'owner')).audit.filter(item=>item.actorId==='synthetic-owner').length,8);
+    console.log('PASS D1 audited module settings, public availability, paused routes, practice write protection, retained history, library paging and aggregate learning report');
 
     assert.equal((await api('/api/admin/learning','owner')).learnerCount,2);
     console.log('PASS D1 unverified JSON/CSV import staging, 200-row atomic bulk insert, duplicates/conflicts, idempotent retry and Admin-only audit review');
