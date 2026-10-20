@@ -23,7 +23,7 @@ function materialReaderPage(){return '<section id="authored-note-reader" class="
 async function loadMaterialReader(id){
  const target=document.getElementById('authored-note-reader');if(!target)return;
  try{
-  const response=await fetch('/api/materials?id='+encodeURIComponent(id),{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(response.status===404?'This note is unavailable or has been withdrawn.':'Study note temporarily unavailable.');
+  const response=await fetch('/api/materials?id='+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error(response.status===404?'This note is unavailable or has been withdrawn.':'Study note temporarily unavailable.');
   if(!target.isConnected)return;
   const note=data.note;target.innerHTML=`<a class="text-link" href="#/notes">← Free study notes</a><p class="eyebrow">${esc(note.category)}</p><h1>${esc(note.title)}</h1><div class="authored-note-text">${esc(note.body)}</div>${readingActions(note)}`;
  }catch(error){if(target.isConnected)target.textContent=error.message;}

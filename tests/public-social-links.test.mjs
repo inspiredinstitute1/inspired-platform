@@ -59,7 +59,7 @@ test('public social markup escapes labels, excludes unsafe URLs and protects new
 
 test('late public social response cannot restore links after a newer empty response',async()=>{
  const pending=[],target={isConnected:true,hidden:false,innerHTML:'Old links',replaceChildren(){this.innerHTML='';}};
- const context=load({document:{getElementById:()=>target},fetch:(_url,options)=>{assert.equal(options.credentials,'omit');assert.equal(options.cache,'no-store');return new Promise(resolve=>pending.push(resolve));}});
+ const context=load({document:{getElementById:()=>target},fetch:(_url,options)=>{assert.equal(options.credentials,'same-origin');assert.equal(options.cache,'no-store');return new Promise(resolve=>pending.push(resolve));}});
  const old=context.loadPublicSocialLinks(),current=context.loadPublicSocialLinks();
  pending[1]({ok:true,json:async()=>({links:[]})});await current;
  pending[0]({ok:true,json:async()=>({links:[{platform:'website',label:'Old',url:'https://example.test/'}]})});await old;

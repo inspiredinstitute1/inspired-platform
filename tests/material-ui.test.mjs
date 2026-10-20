@@ -9,7 +9,7 @@ function load(globals){const context=vm.createContext({readingActions:()=>'',...
 test('public note reader escapes text instead of interpreting HTML and does not send credentials',async()=>{
  const target={isConnected:true,innerHTML:''};let options;
  const context=load({document:{getElementById:()=>target},esc,fetch:async(_url,opt)=>{options=opt;return response({title:'<img src=x onerror=alert(1)>',category:'<script>bad</script>',body:'<iframe src="javascript:alert(1)"></iframe>\nಕನ್ನಡ'})}});
- await context.loadMaterialReader('authored-test');assert(!target.innerHTML.includes('<iframe'));assert(!target.innerHTML.includes('<img'));assert.match(target.innerHTML,/&lt;iframe/);assert.match(target.innerHTML,/ಕನ್ನಡ/);assert.equal(options.credentials,'omit');assert.equal(options.cache,'no-store');
+ await context.loadMaterialReader('authored-test');assert(!target.innerHTML.includes('<iframe'));assert(!target.innerHTML.includes('<img'));assert.match(target.innerHTML,/&lt;iframe/);assert.match(target.innerHTML,/ಕನ್ನಡ/);assert.equal(options.credentials,'same-origin');assert.equal(options.cache,'no-store');
 });
 test('a late note response cannot overwrite a different reader after navigation',async()=>{
  const old={isConnected:true,innerHTML:''},current={isConnected:true,innerHTML:''},pending=deferred();let target=old;

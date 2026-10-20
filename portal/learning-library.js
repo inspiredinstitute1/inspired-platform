@@ -7,7 +7,7 @@ function noteHref(note){return '#/'+noteRoute(note);}
 function noteLink(note,label,cls='button secondary'){return `<a class="${cls}" href="${esc(noteHref(note))}">${esc(label)}${icon('arrow')}</a>`;}
 function noteCategoryClass(note){const category=note.category.toLowerCase();return['grammar','literature','pedagogy','vocabulary','phonology','general'].includes(category)?category:'general';}
 function noteCategories(){return [...new Set(allNotes().map(note=>note.category))].sort((a,b)=>a.localeCompare(b));}
-function libraryNotice(){return libraryLoading?'<p class="small muted" role="status">Loading published notes and PDFs…</p>':libraryError?'<div class="notice" role="status">New study material could not load. Existing catalogue notes are available. <button class="button secondary" type="button" data-action="refresh-library">Try again</button></div>':'';}
+function libraryNotice(){if(!moduleEnabled('library'))return '';return libraryLoading?'<p class="small muted" role="status">Loading published notes and PDFs…</p>':libraryError?'<div class="notice" role="status">New study material could not load. Existing catalogue notes are available. <button class="button secondary" type="button" data-action="refresh-library">Try again</button></div>':'';}
 function normaliseLibraryMetadata(notes){
  if(!Array.isArray(notes))throw Error('Invalid library.');
  return notes.map(note=>{
@@ -18,7 +18,7 @@ function normaliseLibraryMetadata(notes){
 async function loadLearningLibrary(){
  const version=++libraryRequestVersion,current=route();
  try{
-  const response=await fetch('/api/library',{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error('Library unavailable.');
+  const response=await fetch('/api/library',{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(!response.ok)throw Error('Library unavailable.');
   const notes=normaliseLibraryMetadata(data.notes);if(version!==libraryRequestVersion||route()!==current)return;
   publishedLibrary=notes;libraryLoading=false;libraryError=false;
  }catch{if(version!==libraryRequestVersion||route()!==current)return;publishedLibrary=[];libraryLoading=false;libraryError=true;}
@@ -39,7 +39,7 @@ function uploadedPdfPage(){return '<section id="uploaded-pdf-reader" class="pane
 async function loadUploadedPdf(id){
  const target=document.getElementById('uploaded-pdf-reader');if(!target)return;
  try{
-  const response=await fetch('/api/library?id='+encodeURIComponent(id),{credentials:'omit',cache:'no-store'}),data=await response.json();if(!response.ok||data.note?.source!=='pdf')throw Error('This PDF is unavailable or has been withdrawn.');if(!target.isConnected)return;
+  const response=await fetch('/api/library?id='+encodeURIComponent(id),{credentials:'same-origin',cache:'no-store'}),data=await response.json();if(!response.ok||data.note?.source!=='pdf')throw Error('This PDF is unavailable or has been withdrawn.');if(!target.isConnected)return;
   const note=data.note;target.innerHTML=`<a class="text-link" href="#/notes">← Free study notes</a><p class="eyebrow">${esc(note.category)}</p><h1>${esc(note.title)}</h1><p>${(Number(note.bytes)/1024).toFixed(1)} KiB · Free PDF</p><p><a class="button" href="/api/files?id=${esc(note.id)}">Download PDF</a></p><p class="small muted">Read the downloaded document, then mark it complete here. Downloading alone does not mark it complete.</p>${readingActions(note)}`;
  }catch(error){if(target.isConnected)target.textContent=error.message;}
 }

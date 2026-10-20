@@ -15,7 +15,7 @@ async function loadPublicSocialLinks(){
  const target=document.getElementById('public-social-links');if(!target)return;
  const version=++publicSocialVersion;
  try{
-  const response=await fetch('/api/social-links',{credentials:'omit',cache:'no-store'});
+  const response=await fetch('/api/social-links',{credentials:'same-origin',cache:'no-store'});
   if(!response.ok)throw Error('Unavailable');
   const data=await response.json();if(version!==publicSocialVersion||!target.isConnected)return;
   const markup=socialPublicMarkup(Array.isArray(data.links)?data.links:[]);

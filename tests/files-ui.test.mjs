@@ -20,3 +20,15 @@ test('failed/oversized PDF uploads retain selection and metadata and restore con
   const h=uploadHarness(settings);await h.context.uploadStudyPdf(h.form);assert.equal(h.fields.file.files[0],h.file);assert.equal(h.fields.title.value,'Draft PDF');assert.equal(h.fields.file.disabled,false);assert.equal(h.requests.length,settings.size?0:1);assert(h.message.textContent);
  }
 });
+
+test('PDF publication submit dispatch survives a hidden id field and sends Published metadata',async()=>{
+ const fields=Object.fromEntries(Object.entries({id:'pdf-00000000-0000-4000-8000-000000000001',version:'1',title:'Synthetic published PDF',category:'Grammar',status:'published',reason:'Test publication'}).map(([key,value])=>[key,{value,disabled:false}]));
+ const message=element(),form=Object.assign(element(),{id:fields.id,elements:fields,querySelectorAll:()=>Object.values(fields)});
+ form.setAttribute('id','pdf-metadata-form');let submitted,pending,prevented=false;
+ const context=load({document:{getElementById:()=>message,addEventListener:(type,fn)=>{if(type==='submit')submitted=fn}},fetch:async(url,options)=>{assert.equal(url,'/api/admin/files');assert.equal(options.method,'POST');const body=JSON.parse(options.body);assert.equal(body.status,'published');assert.equal(body.id,fields.id.value);assert.equal(body.version,1);return{ok:true,json:async()=>({id:body.id,version:2})};}});
+ context.loadFileAdmin=async()=>{};context.loadResourceAdmin=async()=>{};
+ const save=context.savePdfMetadata;context.savePdfMetadata=form=>{pending=save(form);};
+ const app=readFileSync('portal/app.js','utf8');vm.runInContext(app.slice(app.indexOf("document.addEventListener('submit'"),app.indexOf('\nrender();')),context);
+ submitted({target:form,preventDefault(){prevented=true}});assert(prevented);assert(pending);await pending;
+ assert.equal(fields.version.value,2);assert.match(message.textContent,/Published/);assert.equal(fields.status.disabled,false);
+});

@@ -29,7 +29,7 @@ test('newer metadata response wins and search focus/selection survives asynchron
  const requests=[],renders=[],focus=[],replacement={focus:options=>focus.push(options),setSelectionRange:(a,b)=>focus.push([a,b])};
  const h=setup({document:{activeElement:{id:'filter-search',selectionStart:2,selectionEnd:4},getElementById:()=>replacement},render:(...args)=>renders.push(args),fetch:(_url,options)=>{const request=deferred();requests.push({...request,options});return request.promise}});
  const first=h.context.loadLearningLibrary(),second=h.context.loadLearningLibrary();requests[1].resolve(response([fixture('pdf',2,'Newest PDF')]));await second;requests[0].resolve(response([fixture('authored',1,'Stale title')]));await first;
- assert.equal(h.notes()[0].title,'Newest PDF');assert.equal(renders.length,1);assert.deepEqual(renders[0],[true,false]);assert.deepEqual(focus[1],[2,4]);assert.equal(requests[0].options.credentials,'omit');assert.equal(requests[0].options.cache,'no-store');
+ assert.equal(h.notes()[0].title,'Newest PDF');assert.equal(renders.length,1);assert.deepEqual(renders[0],[true,false]);assert.deepEqual(focus[1],[2,4]);assert.equal(requests[0].options.credentials,'same-origin');assert.equal(requests[0].options.cache,'no-store');
 });
 test('failed refresh drops stale metadata, keeps original notes and exposes retry without fabricating missing titles',async()=>{
  const h=setup({fetch:async()=>({ok:false,json:async()=>({error:'Unavailable'})})});h.seed([fixture('authored',1,'Stale withdrawn title')]);await h.context.loadLearningLibrary();assert.equal(h.notes().length,0);assert.match(h.context.noteResults(),/Original catalogue/);assert.match(h.context.libraryNotice(),/Try again/);assert(!h.context.unavailableSavedNotes());
@@ -43,4 +43,8 @@ test('withdrawn saved IDs remain removable placeholders and completion history r
 test('PDF reader uses fresh published metadata, explicit completion and escaped title/category text',async()=>{
  const target={isConnected:true,innerHTML:''},note=fixture('pdf',2,'<img src=x>','<script>bad</script>');let options;
  const h=setup({document:{getElementById:()=>target},fetch:async(_url,opt)=>{options=opt;return{ok:true,json:async()=>({note})}}});await h.context.loadUploadedPdf(note.id);assert(!target.innerHTML.includes('<img'));assert(!target.innerHTML.includes('<script>'));assert.match(target.innerHTML,/Download PDF/);assert.match(target.innerHTML,/data-action="complete-note"/);assert.match(target.innerHTML,/data-action="bookmark"/);assert.match(target.innerHTML,/Downloading alone does not mark it complete/);assert.equal(h.context.state.read.length,0);assert.equal(options.cache,'no-store');
+});
+
+test('paused library does not show a loading message for a request that cannot run',()=>{
+ const h=setup({moduleEnabled:()=>false});assert.equal(h.context.libraryNotice(),'');
 });
