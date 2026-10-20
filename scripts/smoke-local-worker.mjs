@@ -17,7 +17,7 @@ assert.equal(JSON.parse(readFileSync(config,'utf8')).r2_buckets?.find(bucket=>bu
 mkdirSync('.wrangler', { recursive: true });
 const state = mkdtempSync(resolve('.wrangler/smoke-'));
 if (roles) {
-  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls','0020_social_community_audit'].map(n => `docs/migrations/${n}.sql`)];
+  const files = ['drizzle/0000_far_dust.sql', ...['0001_social_links', '0002_community_membership', '0003_finance_reconciliation','0004_content_manager','0005_programme_resources','0006_programme_enrolments','0007_faculty_assignments','0008_authored_materials','0009_faculty_note_review','0010_pdf_materials','0011_finance_import_staging','0012_finance_review','0013_finance_evidence_decisions','0014_finance_payment_links','0015_cross_batch_payment_links','0016_finance_approval_snapshots','0017_finance_rehearsal_journal','0018_finance_verification_requests','0019_portal_module_controls','0020_social_community_audit','0021_paid_mock_exams'].map(n => `docs/migrations/${n}.sql`)];
   const sql = join(state, 'schema.sql');
   writeFileSync(sql, files.map(f => readFileSync(f, 'utf8')).join('\n'));
   const migration = spawnSync(process.execPath, ['node_modules/wrangler/bin/wrangler.js', 'd1', 'execute', 'DB', '--config', config, '--local', '--persist-to', state, '--file', sql, '--json'], { encoding: 'utf8', timeout: 30000 });
@@ -72,6 +72,42 @@ try {
       assert.equal(response.status, status, `${role} ${method} ${path}: ${response.status === status ? '' : await response.text()}`);
       assert.match(response.headers.get('cache-control') ?? '', /no-store/);
       return response.json();
+    }
+    // Disposable local paid-exam journey across the actual built HTTP routes.
+    // Identities are simulated trusted gateway headers, not provider-login proof.
+    {
+    const examBody={title:'SYNTHETIC launch rehearsal',durationMinutes:1,accessMode:'paid',reason:'Disposable local mock validation',questions:Array.from({length:10},(_,i)=>({question:'Synthetic question '+(i+1),options:['A','B','C','D'],answer:1,explanation:'Synthetic answer for runtime verification.',subject:'Grammar',topic:i<5?'Nouns':'Verbs',positiveMarks:1,negativeMarks:.25}))};
+    await api('/api/admin/exams','student','POST',{...examBody,action:'import'},403);
+    const imported=await api('/api/admin/exams','owner','POST',{...examBody,action:'import'},201);
+    assert.equal((await api('/api/exams','student')).papers.length,0);
+    await api('/api/admin/exams','owner','POST',{action:'status',examId:imported.id,status:'published',version:1,reason:'Synthetic reviewed paper'});
+    await api('/api/exams','student','POST',{action:'start',examId:imported.id},403);
+    const issued=await api('/api/admin/exams','owner','POST',{action:'issue-code',examId:imported.id,email:'student@example.test',validDays:1,paymentReference:'SYNTHETIC only; no payment received',paymentConfirmed:true},201);
+    await api('/api/exams','other','POST',{action:'redeem',code:issued.code},403);
+    await api('/api/exams','student','POST',{action:'redeem',code:issued.code});
+    await api('/api/exams','student','POST',{action:'redeem',code:issued.code},403);
+    const attempt=await api('/api/exams','student','POST',{action:'start',examId:imported.id});
+    assert(!('answer' in attempt.questions[0]));assert.equal(attempt.result,null);
+    const answers=[1,1,1,1,1,2,2,2,2,null];
+    const saved=await api('/api/exams','student','POST',{action:'save',attemptId:attempt.attempt.id,version:attempt.attempt.version,answers});
+    const resumed=await api('/api/exams?attemptId='+attempt.attempt.id,'student');
+    assert.deepEqual(resumed.attempt.answers,answers);assert.equal(resumed.attempt.deadline,attempt.attempt.deadline);
+    await api('/api/exams?attemptId='+attempt.attempt.id,'other','GET',undefined,404);
+    const result=await api('/api/exams','student','POST',{action:'submit',attemptId:attempt.attempt.id,version:saved.attempt.version,answers,score:999});
+    assert.equal(result.result.score,4);assert.equal(result.result.correct,5);assert.equal(result.result.wrong,4);assert.equal(result.result.skipped,1);
+    const analytics=await api('/api/exams/analytics','student');
+    assert.equal(analytics.scope,'self');assert.equal(analytics.overall.score,4);assert.equal(analytics.overall.negativeLoss,1);
+    assert.equal(analytics.swot.strengths.length,1);assert.equal(analytics.swot.weaknesses.length,1);assert.equal(analytics.focus[0].topic,'Verbs');
+    assert(!('learners' in analytics));assert(!('questionReview' in analytics));
+    await api('/api/exams/analytics?learnerId=synthetic-student','other','GET',undefined,403);
+    assert.equal((await api('/api/exams/analytics','other')).attemptCount,0);
+    const cohort=await api('/api/exams/analytics','owner');assert.equal(cohort.attemptCount,1);assert.equal(cohort.learners[0].id,'synthetic-student');
+    const freePaper=await api('/api/admin/exams','owner','POST',{...examBody,action:'import',accessMode:'free'},201);
+    await api('/api/admin/exams','owner','POST',{action:'status',examId:freePaper.id,status:'published',version:1,reason:'Synthetic owner exclusion check'});
+    const ownerAttempt=await api('/api/exams','owner','POST',{action:'start',examId:freePaper.id});
+    await api('/api/exams','owner','POST',{action:'submit',attemptId:ownerAttempt.attempt.id,version:1,answers:Array(10).fill(1)});
+    assert.equal((await api('/api/exams/analytics','owner')).attemptCount,1,'Owner practice must stay outside the cohort');
+    console.log('PASS local built mock routes: import/publish, paid lock, email code binding/replay, save/resume/deadline, private ownership, negative score, labelled SWOT and owner-excluded cohort');
     }
     for (const role of ['owner', 'student']) {
       const page = await get('/', { headers: identities[role] });
