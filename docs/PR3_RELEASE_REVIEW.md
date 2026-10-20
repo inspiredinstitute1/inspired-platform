@@ -4,13 +4,15 @@ Status: **LOCAL CHECKS PASS; RELEASE BLOCKED**. This document is a review plan, 
 
 ## Current evidence
 
-- 312 automated entries pass, zero failures/skips; lint, types, bundle syntax and the 34-route build pass.
+- 323 automated entries pass, zero failures/skips; lint, types, bundle syntax and the 35-route build pass.
 - Built Worker checks use synthetic trusted identity headers with disposable local D1/R2. The newly added assertion confirms Admin/Student identity-dependent HTML has `no-store`; the full role smoke passes. This does not prove gateway header protection or provider sign-in.
 - Base plus twenty migrations apply/reapply with retained synthetic fixtures and clean foreign keys. Earlier recovery checks preserve 42 application tables, schema, audit and sequence counters/deleted IDs; combined local PDF recovery preserves bytes and HTTP/custom metadata. See LOCAL_RECOVERY_VALIDATION.md.
 - The new `npm run audit:release:local` inventories source/build binding names, all migration files and their SHA-256 hashes, requires contiguous migration numbers, and rejects rehearsal flags, a recovery-fixture entry point or static-only packaging. It records the current commit and whether the working tree is clean. The generated manifest lives in a disposable local directory. It runs no tests, migrations, cloud requests or deployment and always leaves releaseReady/releaseApproved/hostedBindingAssignmentVerified false. It is not a full source/archive attestation or independent security audit.
 - Fresh registry/frozen-lockfile installation and patched clean-checkout validation now pass on Node 24.19.0/pnpm 11.25.0. The bounded 25-account/four-5-MiB-PDF local rehearsal passes after fixing a small-overflow 413 lifecycle issue. Hosted capacity remains unmeasured. See LOCAL_OPERATIONS_VALIDATION.md.
 - The current build has the expected placeholder D1 ID for local checks. This is not evidence that hosted storage has been assigned. Never use that placeholder as a release-target identity.
 - Browser extension control is not exposed in this session. The previous cloud preview failed with connection refused and has no repair evidence. No preview was restarted or real browser verification claimed.
+
+Read-only hosted observations and the new Admin readiness checks are documented in OPERATIONS_AND_RECOVERY.md. The live DB currently exposes learner_progress only; the base SQL must not be manually replayed against that existing table. Actual provider/community inputs are listed in PROVIDER_AND_COMMUNITY_READINESS.md. No hosted write, restore or configuration change was performed.
 
 ## Proposed isolated staging action — awaiting explicit approval
 

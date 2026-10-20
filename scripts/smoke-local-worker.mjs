@@ -51,7 +51,7 @@ try {
   assert([301, 302, 307, 308].includes(legacy.status));
   assert.equal(new URL(legacy.headers.get('location'), base).pathname, '/');
   console.log('PASS legacy redirect');
-  for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
+  for (const path of ['/api/admin/operations','/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download', '/api/progress', '/api/enrolments', '/api/faculty', '/api/faculty-notes', '/api/admin/finance-preview']) {
     const response = await get(path, path.endsWith('finance-preview') ? {
       method: 'POST', headers: { 'content-type': 'application/json', origin: base }, body: JSON.stringify({ transactions: [] }),
     } : {});
@@ -81,13 +81,14 @@ try {
       const identity = JSON.parse(html.match(/<script id="portal-identity"[^>]*>(.*?)<\/script>/s)?.[1] ?? 'null');
       assert.equal(identity?.role, role === 'owner' ? 'Admin' : 'Student');
     }
-    for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
+    for (const path of ['/api/admin/operations','/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/learning', '/api/admin/content', '/api/admin/resources', '/api/admin/enrolments', '/api/admin/faculty', '/api/admin/materials', '/api/admin/faculty-notes', '/api/admin/finance-imports','/api/admin/finance-verification','/api/admin/finance-rehearsal','/api/admin/finance-approvals','/api/admin/finance-payment-links','/api/admin/finance-evidence','/api/admin/finance-ledger-preview','/api/admin/finance-review', '/api/admin/files', '/api/admin/files/download']) {
       await api(path, 'student', 'GET', undefined, 403);
-      await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : 200);
+      await api(path, 'owner', 'GET', undefined, path.endsWith('/files/download') ? 404 : path==='/api/admin/operations'?503:200);
     }
     await api('/api/admin/finance-preview', 'student', 'POST', { transactions: [] }, 403);
     console.log('PASS simulated owner/student identities and Admin authorization across built routes');
 
+    const operations=await api('/api/admin/operations','owner','GET',undefined,503);assert.equal(operations.checksPassed,false);assert.deepEqual(operations.issues,['synthetic_rehearsal_configuration_present']);assert.deepEqual(operations.schema.missingObjects,[]);assert.equal(operations.verification.releaseReady,false);assert.equal(operations.pdfStorage.writeVerified,false);await api('/api/admin/operations','owner','POST',{},405);
     const initial = await api('/api/progress', 'student');
     assert.equal(initial.version, 0);
     await api('/api/progress', 'student', 'PUT', { version: 0, payload: { ...initial.payload, goal: 7 } });
@@ -139,8 +140,8 @@ try {
     console.log('PASS D1 social/community retained audit, optimistic edits, trusted account choices, paged history and mock-only discrepancy flags without external group changes');
 
 
-    for (const path of ['/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
-      await api(path, 'owner', 'POST', {}, path==='/api/admin/governance-audit'?405:403, 'https://other.example.test');
+    for (const path of ['/api/admin/operations','/api/admin/governance-audit','/api/admin/modules','/api/admin/social-links', '/api/admin/community', '/api/admin/finance-preview']) {
+      await api(path, 'owner', 'POST', {}, ['/api/admin/governance-audit','/api/admin/operations'].includes(path)?405:403, 'https://other.example.test');
     }
     await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: Array(201).fill({}) }, 400);
     await api('/api/admin/finance-preview', 'owner', 'POST', { transactions: [], padding: 'x'.repeat(100001) }, 413);

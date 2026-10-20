@@ -35,7 +35,7 @@ Still required before release:
 - An approved isolated staging target with matching code/database/object fixtures. No staging deployment has been authorized or performed in this task.
 - Hosted D1 backup/time-travel recovery and migration rollback procedures, R2 object/metadata backup and recovery, operational permission checks and owner approval before production actions.
 
-The original recovery milestone introduced no application changes. The subsequent social/community batch adds migration 0020 and revalidates recovery across forty-two application tables, including restored governance audit protection. The latest application baseline is now 312 tests (including subsequent account-safety and operational checks) and the validated 34-route build/local Worker; lint and type checking pass. Hosted D1 and R2 recovery remain unverified.
+The original recovery milestone introduced no application changes. The subsequent social/community batch adds migration 0020 and revalidates recovery across forty-two application tables, including restored governance audit protection. The latest application baseline is now 323 tests (including subsequent account-safety and operational checks) and the validated 34-route build/local Worker; lint and type checking pass. Hosted D1 and R2 recovery remain unverified.
 
 ## Combined local PDF/object recovery
 
