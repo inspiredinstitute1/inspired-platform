@@ -20,9 +20,9 @@ Scoring is fixed at +1 correct, −0.25 wrong and 0 skipped. Explanations become
 
 ## Import contract
 
-CSV headers: question,option1,option2,option3,option4,answer,solution. Optional passage. Quote commas/newlines and escape quotes according to CSV rules.
+CSV template headers: question,option1,option2,option3,option4,answer,solution,positive_marks,negative_marks. Set positive_marks to 1 and negative_marks to 0.25 (positive deduction amount). Optional passage. Quote commas/newlines and escape quotes according to CSV rules.
 
-JSON: array (or an object with questions array) of objects containing question, options (four distinct strings), answer (integer 1–4), explanation, optional passage. Maximum 250 questions and 1 MB input file. UTF-8 Kannada and English supported. PDF/Word source papers require conversion and review before import. Publishing does not establish PYQ authenticity.
+JSON: array (or an object with questions array) of objects containing question, options (four distinct strings), answer (integer 1–4), explanation, positiveMarks: 1, negativeMarks: 0.25, optional passage. Maximum 250 questions and 1 MB input file. UTF-8 Kannada and English supported. PDF/Word source papers require conversion and review before import. Older imports without mark fields retain +1/−0.25 defaults. Explicit incompatible or blank mark values are rejected, not ignored. Publishing does not establish PYQ authenticity.
 
 Questions, duration and access mode are immutable after import; use a new edition for corrections. Pausing a paper or revoking access blocks active use. Codes expire from issuance, not redemption. A replacement redeemed code replaces the prior entitlement and expiry. Submitted results remain readable by their owner while the practice module is enabled.
 
