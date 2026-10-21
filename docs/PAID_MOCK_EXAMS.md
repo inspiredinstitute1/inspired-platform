@@ -35,3 +35,25 @@ Development validation includes full regression tests, dedicated backend authori
 ## Import review update
 
 The development preview now reports subject/topic coverage, answer-position counts and possible identical question/passage/option sets within the uploaded paper. Duplicate pairs with different keys are flagged explicitly. These advisory checks do not shuffle options, alter supplied questions/keys, infer missing labels or certify PYQs. The Admin still reviews every item and decides whether to save a private draft. CSV parsing rejects illegal embedded quotes and trailing text after a closing quote, while retaining valid escaped quotes, UTF-8 BOM and CRLF input. These changes require a new approved deployment beyond version 7.
+
+## Complimentary access codes (PR #3 development)
+
+Admin → Mock tests → Issue a private access code → Code type →
+**Complimentary · no payment**. Choose a published paid paper, enter the learner's
+sign-in email, access days (1–365), and a reason. No payment checkbox or reference
+is required or submitted. The issuance audit explicitly records no payment claim.
+Paid issuance remains available and still requires manual payment confirmation.
+Neither flow verifies a payment provider.
+
+The code is shown once. Share it privately with the intended learner. It is bound
+to that email, redeemed once, and expires from the issue time. Revoke access using
+the existing Recent codes control; this also revokes the redeemed grant. A
+complimentary code does not make the paper free for other learners. Sign-in and
+one scored attempt per account/paper remain unchanged.
+
+Apply `0022_complimentary_mock_codes.sql` after `0021_paid_mock_exams.sql` before
+running this application version. It adds immutable complimentary issuance
+metadata and atomically creates the code and truthful audit entry. Existing paid
+codes and audit history remain intact. Do not drop the new metadata table on
+rollback; it distinguishes complimentary grants from historical paid issuance.
+Hosted migrations and deployment still require owner approval.

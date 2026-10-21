@@ -5,7 +5,7 @@ import {readFileSync} from 'node:fs';
 import {adminExamsEndpoint,examsEndpoint,parseExamCSV,validatePaper,paperImportReview} from '../lib/exam-service.mjs';
 const owner={userId:'owner',email:'owner@example.test'},student={userId:'student',email:'student@example.test'},other={userId:'other',email:'other@example.test'};
 const paper={title:'Synthetic grammar',durationMinutes:1,accessMode:'paid',questions:[{question:'Choose the noun.',options:['Book','Quickly','Very','And'],answer:1,explanation:'A book is a noun.'},{question:'Choose the verb.',options:['Run','Blue','Desk','And'],answer:1,explanation:'Run is a verb.'}],reason:'Synthetic development verification'};
-function setup(){const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');const sql=readFileSync('docs/migrations/0021_paid_mock_exams.sql','utf8');db.exec(sql);const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){return{meta:{changes:Number(statement.run(...values).changes)}}}});return wrap();}};const env={DB,PORTAL_ADMIN_EMAIL:owner.email};const req=(body,path='/api/exams',headers={})=>new Request('https://local.test'+path,{method:body?'POST':'GET',headers:{origin:'https://local.test','content-type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});const admin=(body,user=owner,path='/api/admin/exams')=>adminExamsEndpoint(req(body,path),user,env);const learner=(body,user=student,path='/api/exams')=>examsEndpoint(req(body,path),user,env);async function create(mode='paid'){const r=await admin({...paper,accessMode:mode,action:'import'});assert.equal(r.status,201,await r.clone().text());const p=await r.json();assert.equal((await admin({action:'status',examId:p.id,version:1,status:'published',reason:'Reviewed synthetic paper'})).status,200);return p.id;}async function code(id,email=student.email){const r=await admin({action:'issue-code',examId:id,email,validDays:1,paymentReference:'SYNTHETIC payment reference',paymentConfirmed:true});assert.equal(r.status,201,await r.clone().text());return(await r.json()).code;}async function unlocked(){const id=await create(),raw=await code(id);assert.equal((await learner({action:'redeem',code:raw})).status,200);return id;}return{db,sql,env,req,admin,learner,create,code,unlocked};}
+function setup(){const db=new DatabaseSync(':memory:');db.exec('PRAGMA foreign_keys=ON');const sql=readFileSync('docs/migrations/0021_paid_mock_exams.sql','utf8')+'\n'+readFileSync('docs/migrations/0022_complimentary_mock_codes.sql','utf8');db.exec(sql);const DB={prepare(sql){const statement=db.prepare(sql);const wrap=(values=[])=>({bind(...v){return wrap(v)},async all(){return{results:statement.all(...values)}},async first(){return statement.get(...values)??null},async run(){return{meta:{changes:Number(statement.run(...values).changes)}}}});return wrap();}};const env={DB,PORTAL_ADMIN_EMAIL:owner.email};const req=(body,path='/api/exams',headers={})=>new Request('https://local.test'+path,{method:body?'POST':'GET',headers:{origin:'https://local.test','content-type':'application/json',...headers},...(body?{body:JSON.stringify(body)}:{})});const admin=(body,user=owner,path='/api/admin/exams')=>adminExamsEndpoint(req(body,path),user,env);const learner=(body,user=student,path='/api/exams')=>examsEndpoint(req(body,path),user,env);async function create(mode='paid'){const r=await admin({...paper,accessMode:mode,action:'import'});assert.equal(r.status,201,await r.clone().text());const p=await r.json();assert.equal((await admin({action:'status',examId:p.id,version:1,status:'published',reason:'Reviewed synthetic paper'})).status,200);return p.id;}async function code(id,email=student.email){const r=await admin({action:'issue-code',examId:id,email,validDays:1,paymentReference:'SYNTHETIC payment reference',paymentConfirmed:true});assert.equal(r.status,201,await r.clone().text());return(await r.json()).code;}async function unlocked(){const id=await create(),raw=await code(id);assert.equal((await learner({action:'redeem',code:raw})).status,200);return id;}return{db,sql,env,req,admin,learner,create,code,unlocked};}
 const payload=async r=>{assert.equal(r.status,200,await r.clone().text());return r.json();};
 test('paper validation supports quoted multilingual CSV and rejects malformed or unsafe structure',()=>{const rows=parseExamCSV('question,option1,option2,option3,option4,answer,solution\n"ಕನ್ನಡ, noun?",Book,Very,And,Quickly,1,"A noun.\nSecond line."');assert.equal(rows[0].question,'ಕನ್ನಡ, noun?');assert.match(rows[0].explanation,/Second line/);assert.throws(()=>parseExamCSV('"unclosed'),/Unclosed/);assert.throws(()=>parseExamCSV('question,question'),/Duplicate/);for(const change of [{durationMinutes:0},{questions:[]},{questions:[{...paper.questions[0],answer:0}]},{questions:[{...paper.questions[0],options:['A','A','B','C']}]},{format:'csv',content:null}])assert.throws(()=>validatePaper({...paper,...change}));});
 test('admin authorization, same-origin writes and own account identity are enforced',async()=>{const h=setup();try{for(const user of [null,student])assert.equal((await h.admin({...paper,action:'import'},user)).status,403);assert.equal((await h.learner(undefined,null)).status,401);const req=h.req({...paper,action:'import'},'/api/admin/exams',{origin:'https://evil.test'});assert.equal((await adminExamsEndpoint(req,owner,h.env)).status,403);assert.equal((await examsEndpoint(h.req(undefined,'/api/exams',{'x-portal-account-id':'another'}),student,h.env)).status,409);}finally{h.db.close();}});
@@ -55,3 +55,45 @@ test('database deadline rejects a save even when application clock is stale',asy
  assert.equal((await h.learner({action:'save',attemptId:'stale-clock',version:1,answers:[1,1]})).status,409);assert.equal(h.db.prepare("SELECT answers_json FROM exam_attempts WHERE id='stale-clock'").get().answers_json,'[null,null]');
  Date.now=realNow;const final=await payload(await h.learner(undefined,student,'/api/exams?attemptId=stale-clock'));assert.equal(final.attempt.status,'submitted');assert.equal(final.result.score,0);assert.equal(final.result.skipped,2);
  }finally{Date.now=realNow;h.db.close();}});
+
+test('complimentary issuance has no payment claim, hides raw code and enforces email, one use and revocation',async()=>{const h=setup();try{
+ const id=await h.create();const r=await h.admin({action:'issue-code',examId:id,codeKind:'complimentary',email:' STUDENT@example.test ',validDays:1,complimentaryReason:'Scholarship'});assert.equal(r.status,201,await r.clone().text());const c=await r.json();assert.equal(c.codeKind,'complimentary');assert.match(c.note,/No payment claimed/);
+ const stored=h.db.prepare('SELECT * FROM exam_codes').get();assert.equal(stored.payment_reference,'');assert.notEqual(stored.code_hash,c.code);
+ assert.equal(h.db.prepare("SELECT count(*) n FROM exam_audit WHERE kind='issue-code'").get().n,0);
+ assert.match(h.db.prepare("SELECT detail FROM exam_audit WHERE kind='issue-complimentary-code'").get().detail,/no payment claimed/);
+ const list=await payload(await h.admin());assert.equal(list.codes[0].codeKind,'complimentary');assert.equal(list.codes[0].complimentaryReason,'Scholarship');assert(!JSON.stringify(list).includes(c.code));
+ assert.equal((await h.learner({action:'redeem',code:c.code},other)).status,403);
+ const redeem=await Promise.all([h.learner({action:'redeem',code:c.code}),h.learner({action:'redeem',code:c.code})]);assert.deepEqual(redeem.map(r=>r.status).sort(),[200,403]);
+ const a=await payload(await h.learner({action:'start',examId:id}));
+ await payload(await h.admin({action:'revoke-code',examId:id,codeId:stored.code_hash}));
+ assert.equal((await h.learner({action:'save',attemptId:a.attempt.id,version:1,answers:[1,1]})).status,403);
+ assert.equal(h.db.prepare('SELECT revoked FROM exam_grants').get().revoked,1);
+ }finally{h.db.close();}});
+
+test('complimentary validation rejects payment claims, invalid inputs and unauthorized issuers without records',async()=>{const h=setup();try{
+ const id=await h.create(),b={action:'issue-code',examId:id,codeKind:'complimentary',email:student.email,validDays:1,complimentaryReason:'Test access'};
+ for(const change of [{paymentConfirmed:true},{paymentReference:'Paid'},{complimentaryReason:''},{complimentaryReason:'x'.repeat(301)},{validDays:0},{validDays:366},{validDays:1.5},{email:'bad'},{codeKind:'unknown'}])assert.equal((await h.admin({...b,...change})).status,400);
+ assert.equal((await h.admin(b,student)).status,403);assert.equal(h.db.prepare('SELECT count(*) n FROM exam_codes').get().n,0);
+ const free=await h.create('free');assert.equal((await h.admin({...b,examId:free})).status,400);
+ await payload(await h.admin({action:'status',examId:id,version:2,status:'paused',reason:'Test pause'}));assert.equal((await h.admin(b)).status,400);
+ }finally{h.db.close();}});
+
+test('complimentary expiry and pre-redemption revocation deny access; migration preserves paid codes',async()=>{const h=setup();try{
+ const id=await h.create(),paid=await h.code(id);h.db.exec(h.sql);
+ assert.equal((await h.learner({action:'redeem',code:paid})).status,200);
+ for(const mode of ['expire','revoke']){
+ const r=await h.admin({action:'issue-code',examId:id,codeKind:'complimentary',email:other.email,validDays:1,complimentaryReason:'Synthetic test'});assert.equal(r.status,201);const c=await r.json();
+ const row=h.db.prepare('SELECT code_hash FROM exam_codes WHERE email=? AND used_by IS NULL AND revoked=0 AND expires_at>1').get(other.email);
+ if(mode==='expire')h.db.prepare('UPDATE exam_codes SET expires_at=1 WHERE code_hash=?').run(row.code_hash);else await payload(await h.admin({action:'revoke-code',examId:id,codeId:row.code_hash}));
+ assert.equal((await h.learner({action:'redeem',code:c.code},other)).status,403);
+ }
+ h.db.exec(h.sql);assert.equal(h.db.prepare('SELECT count(*) n FROM exam_complimentary_codes').get().n,2);
+ assert.throws(()=>h.db.exec("UPDATE exam_complimentary_codes SET reason='changed'"),/immutable/);
+ assert.equal(h.db.prepare("SELECT count(*) n FROM exam_audit WHERE kind='issue-code'").get().n,1);
+ }finally{h.db.close();}});
+
+test('complimentary issuance rolls back fully if its audit write fails',async()=>{const h=setup();try{
+ const id=await h.create();h.db.exec("CREATE TRIGGER test_audit_failure BEFORE INSERT ON exam_audit WHEN NEW.kind='issue-complimentary-code' BEGIN SELECT RAISE(ABORT,'synthetic failure'); END;");
+ assert.equal((await h.admin({action:'issue-code',examId:id,codeKind:'complimentary',email:student.email,validDays:1,complimentaryReason:'Test'})).status,503);
+ for(const table of ['exam_codes','exam_complimentary_codes'])assert.equal(h.db.prepare('SELECT count(*) n FROM '+table).get().n,0);
+ }finally{h.db.close();}});
