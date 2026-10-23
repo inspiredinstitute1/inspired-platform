@@ -1,6 +1,28 @@
 # Operations and recovery — PR #3 development
 
-Status: runbook prepared; hosted restore, automated monitoring and release are **not performed or approved**. No live records were read/exported, changed, migrated or restored. The read-only hosting metadata observations below are not a backup or a security audit.
+Status, updated 23 October 2026: private version 11 is deployed and core real Admin/Student acceptance has passed. Hosted restore, automated monitoring and public release are **not performed or approved**. The 20 October public-target observations below remain historical; subsequent synthetic acceptance writes and bounded row inspection occurred only in the separate private candidate. No public database was exported, changed, migrated or restored during this continuation. Metadata inspection is not a backup or a security audit.
+
+## Supported recovery capability check — 23 October 2026
+
+Rechecked the available native Sites operations and the Sites storage instructions. The exposed database controls are overview and bounded table-row inspection. No operation for full hosted SQL export, coordinated checkpoints, R2 object export or isolated restore is exposed in this session. The storage instructions describe bindings and immutable applied migrations, not a backup/restore workflow. This establishes an available-tool limit; it does not establish that the hosting provider has no internal recovery service.
+
+The private target remains `appgprj_6ad6d873b0288191b0ac6e3215524ee6`, Sites version 11, Worker source `dbc1d08d84cdbf293c14ae25c6cb38c4e3bbfed4`. Native metadata confirms custom restricted access for the existing owner and invited Student viewer, and an untruncated overview contains 49 application tables in DB. This check read no table rows or object bytes, created no backup or recovery target, and changed no deployment, audience, environment variable or migration.
+
+Bounded row inspection cannot replace a backup: it does not provide complete SQL definitions, sequence counters, migration history, an atomic checkpoint or the referenced R2 bytes and metadata. Source archives and prior Worker versions do not contain the application database or uploaded PDFs. The local 49-table/four-PDF recovery evidence is retained separately and does not satisfy hosted recovery.
+
+### Provider handoff required to close recovery
+
+| Required supported control or evidence | Acceptance condition |
+| --- | --- |
+| Exact managed D1/R2 identity and recovery operator | The provider maps DB and BUCKET to the selected private project, identifies who can export/restore, and confirms an empty isolated restore target. Do not assume the user's separate Cloudflare account controls these managed resources. |
+| Full SQL export/checkpoint and migration history | Schema, rows, immutable audits, sequence counters and applied migration history are retained; UTC checkpoint and write/quiescence interval are recorded. |
+| Complete R2 export and inventory | Every object-list page is followed; exact keys, lengths, SHA-256, HTTP metadata and custom metadata accompany the bytes. |
+| Restricted durable retention and recovery access | The provider/operator records retention, access, encryption, recovery access and agreed recovery-point/time objectives. No SLA is inferred before agreement and measurement. |
+| Restore into a separate empty target | Full schema/data/audit/sequence comparisons, foreign-key/integrity checks, PDF hash/metadata comparisons and application privacy/guard checks pass; elapsed recovery time and discrepancies are recorded. |
+
+Next executable step is to obtain these supported controls through the hosting operator. Do not add an application SQL/export/restore endpoint, reuse a sign-in bypass token as provider access, invent hidden API routes, create an unused recovery Site or attempt an in-place restore. No export, restore or provider support message was sent as part of this capability check.
+
+The public project's currently listed domains were also inspected read-only: `inspiredinstitute.in` and `www.inspiredinstitute.in`. The requested `myinspiredinstitute.in` is not in that project's returned domain list. This is not a DNS ownership lookup or evidence about other projects. Resolve the intended hostname and exact target in the eventual public-release decision; no domain/DNS change was made.
 
 ## Read-only hosted observations — 20 October 2026
 

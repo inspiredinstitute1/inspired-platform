@@ -37,7 +37,7 @@ Automated and hosted observations are recorded separately. No real payment, lear
 4. Review the production database's migration history and recovery checkpoint before any future target migration. Retain existing applied staging journal files unchanged; no schema migration is added by this candidate.
 5. Obtain explicit owner approval for the exact public target/version, merge and any DNS/domain changes. Paid code issuance remains manual owner confirmation, not independent PhonePe/APPX/Razorpay verification. Provider reconciliation remains disabled.
 
-Decision: eligible for private acceptance testing once checks and private deployment succeed. Public release approval is withheld until the remaining gates are resolved or their concrete limits explicitly accepted by the owner.
+Decision: deployed private candidate with core separately authenticated Admin/Student acceptance passed. Public release approval is withheld until the remaining gates are resolved or their concrete limits explicitly accepted by the owner.
 
 ## Hosted acceptance evidence — Sites version 11
 
@@ -81,3 +81,11 @@ The rejection statuses are confirmed in hosted Worker logs. This report intentio
 This is scoped acceptance evidence, not complete security certification. Simultaneous stale Admin tabs, two-device provider/session expiry, exhaustive endpoint mutation testing, hosted backup/restore, phone installation/offline behavior and hosted capacity remain unverified. Existing local authorization and concurrency regression results are retained; no code changed, so those suites were not rerun for this documentation-only update.
 
 Next launch blocker: obtain supported hosted D1/R2 checkpoint/export and isolated restore controls, rehearse recovery in a separate empty target, then record exact schema/data/audit/sequences and PDF bytes/metadata comparisons. No public or privileged recovery endpoint has been added. Keep public release, merge and DNS on hold.
+
+## Recovery capability and target review — 23 October 2026
+
+Rechecked the available Sites operations and storage instructions. Database overview/row inspection is exposed; full hosted SQL export, R2 object export, coordinated checkpoints and isolated restore are not exposed in this session. This is an available-tool limitation, not a claim that the provider has no recovery service. No restore was attempted and no recovery endpoint was added. OPERATIONS_AND_RECOVERY.md now gives the exact provider controls and evidence needed to close this gate.
+
+Native metadata reconfirms private version 11, custom owner/Student-viewer access and 49 application tables. This continuation read no table rows and changed no hosted records, configuration or deployment. Evidence documentation was updated without rerunning unchanged application suites.
+
+The retained public project's returned custom-domain list contains `inspiredinstitute.in` and `www.inspiredinstitute.in`; the requested `myinspiredinstitute.in` is absent from that project's list. Ownership/DNS and other projects were not probed. The future release decision must resolve the intended hostname and target. PUBLIC_RELEASE_PLAN.md now reflects this distinction, version 11, the completed real Student checks and the remaining recovery/device/session/capacity gates. No merge, public publication, production migration or DNS/domain change was performed.
