@@ -2,6 +2,8 @@
 
 This candidate continues draft GitHub PR #3, whose starting head is `89bb6d3bfe802f8249a43d4e2764efd0fa38da64`. It also retains the private staging migration journal and gateway fixes from Sites version 9 (`9ff05090710cbb29398672af7a4dd3bb4aa4f011`). No merge, public deployment, domain or DNS change is authorized.
 
+Current private deployment: Sites version 12, source `b25d2aa67076b922b5a4f0715ab312657e8f2303`. The owner confirmed `inspiredinstitute.in` as the intended future public domain; hostname selection is resolved and publication remains on hold. Version-11 evidence below is retained as historical acceptance, followed by the version-12 fix and recheck.
+
 ## Release scope
 
 Admin and Student remain the only base roles. Free notes/PDFs, practice, video classes, private progress, timed tests, reviewed CSV/JSON imports and exam analytics work through the existing application. Premium courses remain in APPX. Optional finance/faculty/community tools remain isolated behind their existing permissions. No new payment processor or identity provider is introduced.
@@ -22,7 +24,7 @@ Admin and Student remain the only base roles. Free notes/PDFs, practice, video c
 
 Automated and hosted observations are recorded separately. No real payment, learner roster or private question bank is used for validation.
 
-- 367 automated tests pass with zero failures/skips. TypeScript and the production Worker build pass. Built runtime checks also pass a full 250-question import preview through the HTTP transport.
+- 368 automated tests pass with zero failures/skips on the version-12 source. TypeScript and the production Worker build pass. The earlier built runtime checks also passed a full 250-question import preview through the HTTP transport; no endpoint/import code changed in version 12.
 - Built-Worker role/runtime checks cover unauthenticated and Student denial, account isolation, CSRF, version conflicts, paid/complimentary codes, deadline persistence, scoring, imports, analytics, material privacy and module guards. Identities in this suite are synthetic trusted headers; this does not prove provider/gateway isolation.
 - Local SQL recovery: 49 application tables, exact rows/schema/audits/sequences, foreign keys, deleted-ID safety, immutable guards and restore into fresh targets passed.
 - Local D1/R2 recovery: four synthetic PDFs, exact bytes/SHA-256, HTTP/custom metadata, PDF rows/audits and missing/corrupt-object rejection passed.
@@ -31,7 +33,7 @@ Automated and hosted observations are recorded separately. No real payment, lear
 
 ## Public-release gates
 
-1. Core real-account acceptance passed on 23 October 2026: separately authenticated Admin and Student identities, Student permission denial, cross-account attempt/analytics isolation, timed refresh/submission and private progress saving. See the Student acceptance evidence below. Concurrent stale Admin tabs, expired-provider sessions and two physical devices remain unverified.
+1. Core real-account acceptance passed on 23 October 2026: separately authenticated Admin and Student identities, Student permission denial, cross-account attempt/analytics isolation, timed refresh/submission and private progress saving. A real same-account two-tab progress conflict also passes after the version-12 fix below. Stale Admin/account-switch tabs, expired-provider sessions and two physical devices remain unverified.
 2. Establish supported hosted D1 and R2 backup/export/restore into a separate empty target and operational ownership. The available Sites connector exposes database inspection but no hosted backup/restore operation; do not add a privileged database-recovery endpoint to bypass that boundary. Local rehearsal does not close this gate.
 3. Validate physical phone PWA install/relaunch, offline behavior, screen-reader behavior and hosted capacity/quotas. Responsive desktop-browser checks do not establish these.
 4. Review the production database's migration history and recovery checkpoint before any future target migration. Retain existing applied staging journal files unchanged; no schema migration is added by this candidate.
@@ -89,3 +91,15 @@ Rechecked the available Sites operations and storage instructions. Database over
 Native metadata reconfirms private version 11, custom owner/Student-viewer access and 49 application tables. This continuation read no table rows and changed no hosted records, configuration or deployment. Evidence documentation was updated without rerunning unchanged application suites.
 
 The retained public project's returned custom-domain list contains `inspiredinstitute.in` and `www.inspiredinstitute.in`; the requested `myinspiredinstitute.in` is absent from that project's list. Ownership/DNS and other projects were not probed. The future release decision must resolve the intended hostname and target. PUBLIC_RELEASE_PLAN.md now reflects this distinction, version 11, the completed real Student checks and the remaining recovery/device/session/capacity gates. No merge, public publication, production migration or DNS/domain change was performed.
+
+## Version 12 — first-edit loss during a competing save, 23 October 2026
+
+The owner confirmed `inspiredinstitute.in` as the intended public domain before this continuation. This resolves the hostname question above; it grants no public-release, merge, migration or DNS authorization.
+
+**Confirmed blocker and fix:** two real Student tabs were loaded before either edit. Tab A saved a weekly-goal change from five to six days. Tab B bookmarked the homophones note. The older tab received HTTP 409, displayed a successful save, but the bookmark disappeared and was absent after reload and in bounded storage inspection. The initial application state and sync baseline shared mutable arrays because initialization made a shallow copy. The first array edit therefore also changed the baseline, so conflict reconciliation treated that edit as unchanged. Version 12 makes independent deep copies of initial state and the baseline, including nested objects.
+
+**Validation:** a regression using the application's actual initialization failed against the old code, then passed after the fix. It covers online and cached starts and first additions/removals for saved notes, completed notes and watched classes, preserving a competing remote goal. All 368 tests pass, with zero failures/skips; TypeScript and production build pass. Source `b25d2aa67076b922b5a4f0715ab312657e8f2303` was packaged by the supported Sites source workflow and deployed as private version 12. No migration or binding change was added, and the custom owner/Student-viewer audience was preserved.
+
+**Real hosted recheck:** after full reloads, Tab A changed the five-day goal to six; the older Tab B saved the previously unsaved homophones bookmark. Hosted logs record the expected `/api/progress` PUT 409 at 17:15:09 UTC, followed by successful reconciliation. Both the six-day goal and saved note appear together and survive another full reload. The five-day goal and original unsaved bookmark state were then restored through the UI. A final reload shows the restored state and saved status; independent bounded inspection confirms the Student payload matches its original contents and the entire Admin row is unchanged. Normal version/timestamp increments from test saves remain. No exam attempt, profile, activity, payment, question bank or other account was modified by this check.
+
+This closes the observed first-edit-loss blocker and the scoped same-account two-tab progress-conflict check. It does not establish stale Admin/account-switch or expired-session behavior, physical devices/PWA/screen readers, hosted capacity or supported hosted D1/R2 recovery. Earlier role, recovery and concurrency results are retained; endpoint/runtime suites were not repeated for this browser-initialization-only fix. Public release, merge and DNS remain on hold.

@@ -1,6 +1,6 @@
 # Operations and recovery — PR #3 development
 
-Status, updated 23 October 2026: private version 11 is deployed and core real Admin/Student acceptance has passed. Hosted restore, automated monitoring and public release are **not performed or approved**. The 20 October public-target observations below remain historical; subsequent synthetic acceptance writes and bounded row inspection occurred only in the separate private candidate. No public database was exported, changed, migrated or restored during this continuation. Metadata inspection is not a backup or a security audit.
+Status, updated 23 October 2026: private version 12 is deployed; core real Admin/Student acceptance and a real two-tab progress-conflict check have passed. Hosted restore, automated monitoring and public release are **not performed or approved**. The 20 October public-target observations below remain historical; subsequent synthetic acceptance writes and bounded row inspection occurred only in the separate private candidate. No public database was exported, changed, migrated or restored during this continuation. Metadata inspection is not a backup or a security audit.
 
 ## Supported recovery capability check — 23 October 2026
 
@@ -23,6 +23,8 @@ Bounded row inspection cannot replace a backup: it does not provide complete SQL
 Next executable step is to obtain these supported controls through the hosting operator. Do not add an application SQL/export/restore endpoint, reuse a sign-in bypass token as provider access, invent hidden API routes, create an unused recovery Site or attempt an in-place restore. No export, restore or provider support message was sent as part of this capability check.
 
 The public project's currently listed domains were also inspected read-only: `inspiredinstitute.in` and `www.inspiredinstitute.in`. The requested `myinspiredinstitute.in` is not in that project's returned domain list. This is not a DNS ownership lookup or evidence about other projects. Resolve the intended hostname and exact target in the eventual public-release decision; no domain/DNS change was made.
+
+Subsequent owner confirmation on 23 October accepts `inspiredinstitute.in` as the intended public domain. The hostname discrepancy is resolved; this confirmation does not authorize publication, merge, migrations or DNS changes. Private version 12 (`b25d2aa67076b922b5a4f0715ab312657e8f2303`) fixes a browser initialization alias that could drop a first bookmark during a competing-tab save. The real hosted 409/retry case now preserves the other tab's weekly goal and the bookmark through reload. The original Student payload was restored and the Admin row was unchanged. See RELEASE_CANDIDATE_2026_10_23.md for the scoped evidence. No schema migration or recovery control was introduced.
 
 ## Read-only hosted observations — 20 October 2026
 

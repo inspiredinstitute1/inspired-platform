@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 const contract=readFileSync('portal/account-contract.js','utf8'),sync=readFileSync('portal/cloud-sync.js','utf8'),boot=readFileSync('portal/cloud-boot.js','utf8');
+const app=readFileSync('portal/app.js','utf8'),initialState=app.slice(app.indexOf('const boot=window.__PORTAL_BOOT__||{};'),app.indexOf('let currentFilter='));
 const defaults=()=>({profile:null,read:[],saved:[],watched:[],attempts:[],drafts:{},activity:{},goal:5,customNotes:[]});
 const user={id:'synthetic-a',role:'Student',email:'a@example.test'};
 const envelope=(payload=defaults(),version=1,identity=user)=>({payload,version,user:identity});
@@ -15,6 +16,25 @@ test('signed-out response blocks future writes while retaining the account devic
 test('foreign-account or changed-role success envelopes never enter local progress',async()=>{for(const identity of [{...user,id:'synthetic-b'},{...user,role:'Admin'}]){const {h}=harness(async()=>response(200,envelope({...defaults(),goal:7},9,identity)));await h.syncProgress(true);assert(h.cloud.blocked);assert.equal(h.state.goal,5);assert.equal(h.cloud.version,0);}});
 test('malformed envelopes and JSON errors preserve pending state and clear saving flags',async()=>{for(const data of [envelope(defaults(),-1),envelope({...defaults(),saved:null}),{},null]){const {h}=harness(async()=>response(200,data));h.state.goal=6;await h.syncProgress();assert.equal(h.state.goal,6);assert(h.cloud.pending);assert(h.cloud.error);assert(!h.cloud.saving);assert.equal(h.cloud.version,0);}const {h}=harness(async()=>({ok:true,status:200,json:async()=>{throw Error('Invalid JSON')}}));await h.syncProgress();assert(h.cloud.error);assert(h.cloud.pending);});
 test('ordinary version conflicts reconcile only the same account and retry with the returned version',async()=>{const calls=[];const {h}=harness(async(url,options)=>{const body=JSON.parse(options.body);calls.push(body);return calls.length===1?response(409,envelope({...defaults(),read:['active-passive']},2)):response(200,envelope(body.payload,3));});h.state.saved=['homophones-100'];await h.syncProgress();assert.equal(calls.length,2);assert.equal(calls[1].version,2);assert.deepEqual(plain(h.state.read),['active-passive']);assert.deepEqual(plain(h.state.saved),['homophones-100']);assert.equal(h.cloud.version,3);assert(!h.cloud.pending);});
+test('first edits after real app initialization survive a competing tab save for remote and cached starts',async()=>{
+ for(const source of ['remote','cache'])for(const field of ['saved','read','watched'])for(const remove of [false,true]){
+  const item=field==='watched'?'sample-video':'homophones-100',payload=defaults();if(remove)payload[field]=[item];
+  const baseline=plain(payload),remote={...plain(payload),goal:6},calls=[],storage=new Map();let timerId=0;
+  const portalBoot={user,...(source==='remote'?{remote:envelope(payload,1)}:{cache:{payload,base:payload,version:1,pending:false}})};
+  const h=vm.createContext({window:{__PORTAL_BOOT__:portalBoot},localStorage:{setItem:(k,v)=>storage.set(k,v)},setTimeout:()=>++timerId,clearTimeout:()=>{},AbortController,$:()=>null,toast:()=>{},fetch:async(_url,options)=>{
+   if(!options.body)return response(200,envelope(remote,2));
+   const body=JSON.parse(options.body);calls.push(body);
+   return source==='remote'&&calls.length===1?response(409,envelope(remote,2)):response(200,envelope(body.payload,3));
+  }});
+  vm.runInContext(contract+'\n'+sync+'\n'+initialState,h);
+  vm.runInContext(remove?`state.${field}.splice(0,1);cloud.pending=true`:`state.${field}.push(${JSON.stringify(item)});cloud.pending=true`,h);
+  assert.deepEqual(plain(vm.runInContext('cloud.base',h)),baseline,'local edits must not mutate the sync baseline');
+  await h.syncProgress();
+  assert.deepEqual(calls.at(-1).payload[field],remove?[]:[item]);
+  assert.equal(calls.at(-1).payload.goal,6,'the newer goal from the other tab must survive');
+  assert.equal(vm.runInContext('cloud.pending',h),false);assert.equal(vm.runInContext('cloud.error',h),false);
+ }
+});
 test('edits made while a save is pending survive its response and are saved in the next version',async()=>{let release;let count=0;const pending=new Promise(r=>{release=r});const {h}=harness(async(url,options)=>{const body=JSON.parse(options.body);count++;if(count===1){await pending;return response(200,envelope(body.payload,1));}return response(200,envelope(body.payload,2));});const saving=h.syncProgress();h.state.goal=7;release();await saving;assert.equal(count,2);assert.equal(h.state.goal,7);assert.equal(h.cloud.version,2);assert(!h.cloud.pending);});
 test('network timeout remains active until the JSON response body finishes',async()=>{let rejectBody,signal,started;const bodyStarted=new Promise(resolve=>{started=resolve});const {h,timers}=harness(async(url,options)=>{signal=options.signal;return{ok:true,status:200,json:()=>new Promise((resolve,reject)=>{rejectBody=reject;started();signal.addEventListener('abort',()=>reject(Error('Aborted body')));})};});const saving=h.syncProgress();await bodyStarted;assert.equal(typeof rejectBody,'function');assert.equal(timers.size,1);[...timers.values()][0]();await saving;assert(signal.aborted);assert(h.cloud.error);assert(!h.cloud.saving);assert.equal(timers.size,0);});
 test('boot rejects changed-account data before selecting reconciliation state',async()=>{const storage=new Map([['inspired-account:'+user.id,JSON.stringify({payload:{...defaults(),goal:6},pending:true})]]);let expected;const h=vm.createContext({URLSearchParams,AbortController,encodeURIComponent,document:{getElementById:()=>({textContent:JSON.stringify(user)})},window:{location:{search:'',pathname:'/',hash:''},history:{}},localStorage:{getItem:k=>storage.get(k)},setTimeout:()=>1,clearTimeout:()=>{},fetch:async(url,options)=>{if(url==='/api/progress'){expected=options.headers['x-portal-account-id'];return response(200,envelope({...defaults(),goal:7},8,{...user,id:'synthetic-b'}));}return response(200,{modules:[]});}});await vm.runInContext('(async()=>{'+contract+'\n'+boot+'})()',h);const result=h.window.__PORTAL_BOOT__;assert.equal(expected,user.id);assert(result.accountBlocked);assert.equal(result.remote,null);assert.equal(result.cache.payload.goal,6);assert.equal(result.storageKey,'inspired-account:'+user.id);});
