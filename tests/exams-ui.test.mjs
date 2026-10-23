@@ -10,3 +10,20 @@ test('save failures preserve unsaved selections and show retry guidance; conflic
 test('countdown uses server deadline and monotonic elapsed time; rendered active exam contains no explanation',async()=>{const h=harness();h.c.accountFetch=async()=>({ok:true,json:async()=>data});await h.c.loadTimedExam('a');assert.equal(h.clock.textContent,'Time remaining: 1:00');assert(!h.box.innerHTML.includes('Correct answer:'));h.c.performance.now=()=>1100;vm.runInContext('tickExam(examSession)',h.c);assert.equal(h.clock.textContent,'Time remaining: 0:59');});
 
 test('network interruption retains selections and retry conflict never overwrites the server answer',async()=>{const h=harness();h.c.accountFetch=async()=>({ok:true,json:async()=>data});await h.c.loadTimedExam('a');vm.runInContext('examSession.answers=[4];examSession.generation=1',h.c);h.c.accountFetch=async()=>{throw Error('Connection interrupted')};await vm.runInContext('saveExam(examSession)',h.c);assert.equal(vm.runInContext('examSession.answers[0]',h.c),4);assert.equal(vm.runInContext('examSession.savedGeneration',h.c),0);assert.match(h.message.textContent,/Save answers now/);h.c.accountFetch=async()=>({ok:false,status:409,json:async()=>({error:'A newer save exists'})});await vm.runInContext('saveExam(examSession)',h.c);assert.equal(vm.runInContext('examSession.conflict',h.c),true);assert.equal(vm.runInContext('examSession.answers[0]',h.c),4);assert.match(h.message.textContent,/Refresh/);});
+
+test('question navigation retains unsaved choices, save state and the server countdown',async()=>{const h=harness();const fields=[{hidden:false},{hidden:true}],prev={dataset:{}},next={dataset:{}},nav={},count={};let focused=false;
+ h.box.querySelector=selector=>selector==='#exam-save-message'?h.message:selector==='#exam-clock'?h.clock:selector==='.exam-question-nav'?nav:selector==='#exam-answer-count'?count:selector==='.exam-actions [data-exam-jump]'?prev:selector==='#exam-question-1'?{focus(){focused=true;}}:null;
+ h.box.querySelectorAll=selector=>selector==='.exam-question'?fields:selector==='.exam-actions [data-exam-jump]'?[prev,next]:[];
+ h.c.accountFetch=async()=>({ok:true,json:async()=>({...data,attempt:{...data.attempt,answers:[null,null]},questions:[...data.questions,...data.questions]})});await h.c.loadTimedExam('a');
+ vm.runInContext('examSession.answers=[2,null];examSession.generation=1;examSession.pending=true',h.c);
+ await h.listeners.click[0]({target:{closest:selector=>selector==='[data-exam-jump]'?{dataset:{examJump:'1'}}:null}});
+ assert.deepEqual(fields.map(f=>f.hidden),[true,false]);assert.equal(focused,true);assert.equal(vm.runInContext('examSession.answers[0]',h.c),2);assert.equal(vm.runInContext('examSession.generation',h.c),1);assert.equal(vm.runInContext('examSession.pending',h.c),true);assert.equal(h.clock.textContent,'Time remaining: 1:00');assert.equal(count.textContent,'1 / 2 answered');assert.equal(next.disabled,true);assert.equal(prev.disabled,false);
+});
+
+test('starting a timed attempt requires explicit in-page confirmation before the server request',async()=>{const h=harness();let calls=0,focused=false,markup='';const buttons=[{},{}],prompt={querySelectorAll:()=>buttons},start={dataset:{examStart:'paper'},insertAdjacentHTML(_where,html){markup=html;},parentElement:{querySelector:()=>({focus(){focused=true;}})}};
+ h.c.accountFetch=async(_url,options)=>{calls++;assert.equal(JSON.parse(options.body).examId,'paper');return{ok:true,json:async()=>data};};
+ await h.listeners.click[0]({target:{closest:selector=>selector==='[data-exam-start]'?start:null}});
+ assert.equal(calls,0);assert.equal(start.disabled,true);assert(focused);assert.match(markup,/Start my timed attempt/);
+ const confirm={dataset:{examConfirmStart:'paper'},closest:()=>prompt};await h.listeners.click[0]({target:{closest:selector=>selector==='[data-exam-confirm-start]'?confirm:null}});
+ assert.equal(calls,1);assert.equal(h.c.location.hash,'#/exam/a');assert(buttons.every(b=>b.disabled));
+});

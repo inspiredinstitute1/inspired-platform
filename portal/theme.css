@@ -349,3 +349,23 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
 @media(max-width:760px){.admin-manager .form-field,.admin-manager .small,.admin-checkbox-row{font-size:17px;line-height:1.7}.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{font-size:18px;min-height:50px}.admin-manager .hero-actions{align-items:stretch}.admin-manager .button{font-size:16px;line-height:1.5;max-width:100%}}
 
 .authored-note-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.125rem;line-height:1.8;margin-top:24px}
+
+/* One question at a time keeps long exam papers usable on a phone. */
+.exam-question[hidden]{display:none!important}
+.exam-question{min-width:0;margin:24px 0;padding:18px;border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}
+.exam-question legend{padding:0 8px;font-weight:700}
+.exam-question label{min-height:48px;cursor:pointer;line-height:1.6}
+.exam-question input{width:20px;height:20px;accent-color:var(--gold)}
+.exam-status-bar{padding:14px;background:var(--field);border:1px solid var(--line);border-radius:12px}
+#exam-clock{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#exam-save-message{font-size:16px;line-height:1.6}
+.exam-question-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;max-height:180px;overflow-y:auto;padding:4px}
+.exam-jump{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);cursor:pointer;font-size:16px}
+.exam-jump.answered{border-color:var(--gold);color:var(--gold)}
+.exam-jump[aria-current]{outline:2px solid var(--gold);outline-offset:2px}
+.exam-actions{display:flex;flex-wrap:wrap;gap:12px}
+#timed-exam :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media(max-width:760px){.exam-question{padding:12px}.exam-actions .button{flex:1 1 120px;white-space:normal;min-height:48px}#timed-exam h1{font-size:26px}.exam-question p,.exam-question label{font-size:18px}}
+
+/* Keep account and Admin links reachable on shorter desktop screens. */
+.sidebar{overflow-y:auto;overscroll-behavior:contain}

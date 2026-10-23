@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 export const metadata: Metadata = {
- title:'InspirED Institute | For Competitive Exams',
+ title:'InspirED Institute | English for Competitive Exams',
  description:'Free Video Lessons • Study Notes • PYQs • Mock Tests. Your learning journey starts here with InspirED Institute.',
  metadataBase:new URL('https://inspiredinstitute.in'),alternates:{canonical:'/'},robots:{index:true,follow:true},manifest:'/manifest.webmanifest',appleWebApp:{capable:true,title:'InspirED',statusBarStyle:'black-translucent'},icons:{icon:'/assets/logo.jpeg',apple:'/icons/apple-touch-icon.png'}
 };

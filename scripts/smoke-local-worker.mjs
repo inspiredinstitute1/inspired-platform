@@ -45,7 +45,7 @@ try {
     const response = await get(path);
     assert.equal(response.status, 200, path);
     await response.arrayBuffer();
-    console.log('PASS public runtime', path);
+    if(path==='/'||path.startsWith('/api/')){assert.equal(response.headers.get('x-content-type-options'),'nosniff');assert.equal(response.headers.get('permissions-policy'),'camera=(), microphone=(), geolocation=()');}console.log('PASS public runtime', path);
   }
   const legacy = await get('/index.html', { redirect: 'manual' });
   assert([301, 302, 307, 308].includes(legacy.status));
@@ -68,7 +68,7 @@ try {
       other: { 'oai-authenticated-user-id': 'synthetic-other', 'oai-authenticated-user-email': 'other@example.test' },
     };
     async function api(path, role, method = 'GET', body, status = 200, origin = base) {
-      const response = await get(path, { method, headers: { ...identities[role], ...(path==='/api/progress'?{'x-portal-account-id':identities[role]['oai-authenticated-user-id']}:{}), origin, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
+      const response = await get(path, { method, headers: { ...identities[role], 'x-portal-account-id':encodeURIComponent(identities[role]['oai-authenticated-user-id']), origin, 'content-type': 'application/json' }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
       assert.equal(response.status, status, `${role} ${method} ${path}: ${response.status === status ? '' : await response.text()}`);
       assert.match(response.headers.get('cache-control') ?? '', /no-store/);
       return response.json();
@@ -79,6 +79,7 @@ try {
     const examBody={title:'SYNTHETIC launch rehearsal',durationMinutes:1,accessMode:'paid',reason:'Disposable local mock validation',questions:Array.from({length:10},(_,i)=>({question:'Synthetic question '+(i+1),options:['A','B','C','D'],answer:1,explanation:'Synthetic answer for runtime verification.',subject:'Grammar',topic:i<5?'Nouns':'Verbs',positiveMarks:1,negativeMarks:.25}))};
     await api('/api/admin/exams','student','POST',{...examBody,action:'import'},403);
     const examPreview=await api('/api/admin/exams','owner','POST',{...examBody,action:'preview'});assert.equal(examPreview.review.labelled,10);assert.equal(examPreview.review.unlabelled,0);assert.deepEqual(examPreview.review.answerPositions,[10,0,0,0]);
+    const fullImport=await api('/api/admin/exams','owner','POST',{...examBody,action:'preview',questions:Array.from({length:250},(_,i)=>({...examBody.questions[i%10],question:'SYNTHETIC full-paper question '+(i+1)+' '+('Check the complete import transport. '.repeat(5))}))});assert.equal(fullImport.questionCount,250);console.log('PASS full 250-question import preview across built HTTP transport');
     const imported=await api('/api/admin/exams','owner','POST',{...examBody,action:'import'},201);
     assert.equal((await api('/api/exams','student')).papers.length,0);
     await api('/api/admin/exams','owner','POST',{action:'status',examId:imported.id,status:'published',version:1,reason:'Synthetic reviewed paper'});

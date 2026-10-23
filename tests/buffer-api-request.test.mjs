@@ -65,3 +65,12 @@ test('a misleading small-overflow length cannot bypass the absolute discard cap'
  const request=new Request('https://local.test/api/progress',{method:'PUT',headers:{'content-length':'2000001'},body,duplex:'half'});
  assert.equal((await bufferApiRequest(request)).status,413);assert(cancelled);
 });
+
+
+test('ordinary full-paper imports pass the transport guard and oversized exam imports fail',async()=>{
+ const body=JSON.stringify({action:'preview',questions:Array.from({length:250},()=>({question:'Choose the correct sentence. '.repeat(8),options:['A','B','C','D'],answer:2,explanation:'A meaningful explanation. '.repeat(10)}))});
+ assert(body.length>3000);
+ const request=new Request('https://local.test/api/admin/exams',{method:'POST',headers:{'content-type':'application/json'},body});
+ const buffered=await bufferApiRequest(request);assert(buffered instanceof Request);assert.equal(await buffered.text(),body);
+ const large=await bufferApiRequest(new Request('https://local.test/api/admin/exams',{method:'POST',body:'x'.repeat(1500001)}));assert.equal(large.status,413);
+});
