@@ -31,7 +31,7 @@ Automated and hosted observations are recorded separately. No real payment, lear
 
 ## Public-release gates
 
-1. Complete a real separately authenticated Student session and cross-account/device switching. A successful Admin browser session plus local role simulations is insufficient evidence.
+1. Core real-account acceptance passed on 23 October 2026: separately authenticated Admin and Student identities, Student permission denial, cross-account attempt/analytics isolation, timed refresh/submission and private progress saving. See the Student acceptance evidence below. Concurrent stale Admin tabs, expired-provider sessions and two physical devices remain unverified.
 2. Establish supported hosted D1 and R2 backup/export/restore into a separate empty target and operational ownership. The available Sites connector exposes database inspection but no hosted backup/restore operation; do not add a privileged database-recovery endpoint to bypass that boundary. Local rehearsal does not close this gate.
 3. Validate physical phone PWA install/relaunch, offline behavior, screen-reader behavior and hosted capacity/quotas. Responsive desktop-browser checks do not establish these.
 4. Review the production database's migration history and recovery checkpoint before any future target migration. Retain existing applied staging journal files unchanged; no schema migration is added by this candidate.
@@ -54,4 +54,30 @@ Validated private Worker source: `dbc1d08d84cdbf293c14ae25c6cb38c4e3bbfed4`. The
 
 The internal preview browser was unavailable under its browser URL policy; no workaround was attempted. Hosted browser validation used the connected browser against the authorized restricted Site.
 
-**Readiness:** validated private acceptance candidate. Public release remains blocked by a fresh separate Student/account-switch check, supported hosted backup/restore proof, physical-device/PWA checks, hosted capacity and a target-specific production migration/release decision. This report is evidence, not authorization to merge or publish publicly.
+**Readiness:** validated private acceptance candidate. The subsequent Student acceptance below closes the core separate-Student check. Public release remains blocked by supported hosted backup/restore proof, physical-device/PWA and concurrent-session checks, hosted capacity and a target-specific production migration/release decision. This report is evidence, not authorization to merge or publish publicly.
+
+
+## Real Student acceptance — 23 October 2026, 16:53 UTC (22:23 IST)
+
+Target: the existing private Sites version 11 (`dbc1d08d84cdbf293c14ae25c6cb38c4e3bbfed4`). Application source, deployment, access policy, public website, DNS and GitHub main were unchanged by this check. The user completed the separate Student sign-in; no identity headers or Admin role settings were substituted.
+
+| Check | Observed result |
+| --- | --- |
+| Authenticated identity | Account page identifies the previously permitted Student account and Student role; Admin navigation is absent. The earlier session was authenticated as the separate Admin account. |
+| Admin page | Direct `/#/admin` navigation displays “Admin access required” and no management forms. |
+| Admin exam API | A browser GET using the real Student session receives HTTP 403 and “Admin access required.” |
+| Other account's attempt | Direct GET of the previously recorded Admin attempt receives HTTP 404 and “Attempt not found.” |
+| Other account's analytics | A report request targeting the Admin identity receives HTTP 403 and “You can view only your own analytics.” |
+| Free/paid separation | The published free model paper is available to start; the paid paper remains locked for this Student. No payment confirmation or new access code was issued. |
+| Fresh attempt | The Student receives a separate attempt with 0/10 selected answers and a fresh ten-minute deadline, rather than the Admin's completed attempt. |
+| Refresh/resume | Five selections persist after refresh; the timer continues from the original deadline (9:39 before refresh, 9:16 after). |
+| Submission/scoring | Five correct, four wrong, one skipped returns exactly 4/10 after explicit final confirmation. |
+| Private analytics | Only the Student's two finalized attempts appear: the pre-existing 7.5/10 sample and the new 4/10 model, totaling 11.5/20. Accuracy is 68.4%, coverage 95%, deducted marks 1.5. Cohort and other-learner review controls are absent. |
+| Durable note progress | Saved a previously unsaved homophones note; the saved state survived a full refresh. Removed the test bookmark and refreshed again to confirm the original unsaved state was restored. |
+| Independent storage check | Bounded read-only inspection confirms exactly one new submitted attempt, owned by a different identity from Admin. Both pre-existing exam-attempt records remain byte-for-byte unchanged. |
+
+The rejection statuses are confirmed in hosted Worker logs. This report intentionally omits account emails, user/attempt IDs, raw question payloads, logs, tokens and personal screenshots.
+
+This is scoped acceptance evidence, not complete security certification. Simultaneous stale Admin tabs, two-device provider/session expiry, exhaustive endpoint mutation testing, hosted backup/restore, phone installation/offline behavior and hosted capacity remain unverified. Existing local authorization and concurrency regression results are retained; no code changed, so those suites were not rerun for this documentation-only update.
+
+Next launch blocker: obtain supported hosted D1/R2 checkpoint/export and isolated restore controls, rehearse recovery in a separate empty target, then record exact schema/data/audit/sequences and PDF bytes/metadata comparisons. No public or privileged recovery endpoint has been added. Keep public release, merge and DNS on hold.
