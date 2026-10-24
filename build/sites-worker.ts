@@ -1,9 +1,13 @@
 import handler from "vinext/server/fetch-handler";
 import { runWithConnectorBinding } from "../lib/connector-context";
 import type { ConnectorBinding } from "../lib/connector-contract.mjs";
+import { bufferApiRequest } from "../lib/buffer-api-request.mjs";
 
 export default {
-  fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+  async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext<{ CONNECTORS?: ConnectorBinding }>) {
+    const buffered = await bufferApiRequest(request);
+    if (buffered instanceof Response) return buffered;
+    request = buffered;
     let binding = ctx.props?.CONNECTORS;
     // Local preview emulates the same request-scoped capability. This branch and
     // the auxiliary service binding are absent from production builds.
@@ -23,6 +27,18 @@ export default {
         },
       };
     }
-    return runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    const response = await runWithConnectorBinding(binding, () => handler.fetch(request, env, ctx));
+    const secured = new Response(response.body, response);
+    secured.headers.set('X-Content-Type-Options', 'nosniff');
+    secured.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    secured.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    // Sites controls access and framing. Never cache account HTML, API payloads
+    // or private paper answers in an intermediary or service worker.
+    const path = new URL(request.url).pathname;
+    if (path === '/' || path.startsWith('/api/')) {
+      secured.headers.set('Cache-Control', 'private, no-store');
+      secured.headers.append('Vary', 'Cookie, oai-authenticated-user-id');
+    }
+    return secured;
   },
 };
