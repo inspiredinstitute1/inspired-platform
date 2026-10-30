@@ -9,7 +9,7 @@ fs.writeFileSync('lib/portal-shell.ts','export const portalShell = '+JSON.string
 const migrationFiles=fs.readdirSync('docs/migrations').filter(name=>/^\d{4}_.*\.sql$/.test(name)).sort();
 const schemaFiles=['drizzle/0000_far_dust.sql',...migrationFiles.map(name=>'docs/migrations/'+name)];
 const schemaObjects=new Map(),schemaHash=createHash('sha256');
-for(const path of schemaFiles){const sql=fs.readFileSync(path,'utf8');schemaHash.update(path+'\n'+sql+'\n');for(const match of sql.matchAll(/CREATE\s+(TABLE|INDEX|TRIGGER|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?([a-zA-Z_][a-zA-Z0-9_]*)["`]?/gi)){const type=match[1].toLowerCase(),name=match[2];schemaObjects.set(type+':'+name,{type,name});}}
+for(const path of schemaFiles){const sql=fs.readFileSync(path,'utf8');schemaHash.update(path+'\n'+sql+'\n');for(const match of sql.matchAll(/CREATE\s+(?:UNIQUE\s+)?(TABLE|INDEX|TRIGGER|VIEW)\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?([a-zA-Z_][a-zA-Z0-9_]*)["`]?/gi)){const type=match[1].toLowerCase(),name=match[2];schemaObjects.set(type+':'+name,{type,name});}}
 fs.writeFileSync('lib/operations-catalogue.json',JSON.stringify({migrationCount:migrationFiles.length,fingerprint:schemaHash.digest('hex'),objects:[...schemaObjects.values()].sort((a,b)=>(a.type+':'+a.name).localeCompare(b.type+':'+b.name))}));
 const app=fs.readFileSync('portal/app.js','utf8');
 const data=app.slice(app.indexOf('const NOTES='),app.indexOf("const boot=window"));
