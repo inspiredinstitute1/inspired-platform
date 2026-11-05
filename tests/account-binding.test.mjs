@@ -41,3 +41,18 @@ test('malformed activity maps return 400 without storing learner progress',async
  }
  assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
 }finally{h.db.close()}});
+
+test('null nested progress records are rejected with client errors and no database writes',async()=>{const h=setup();try{
+ const bank=JSON.parse(readFileSync('lib/portal-catalogue.json','utf8'));const t=bank.tests[0];
+ const cases=[
+  [{...emptyProgress(),profile:'not-a-profile'},400],
+  [{...emptyProgress(),customNotes:[null]},400],
+  [{...emptyProgress(),attempts:[null]},400],
+  [{...emptyProgress(),drafts:{[t.id]:null}},400]
+ ];
+ for(const [payload,status] of cases){
+  const r=await progressEndpoint(request('PUT',a.userId,{version:0,payload}),a,h.env);
+  assert.equal(r.status,status);
+  assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
+ }
+}finally{h.db.close()}});
