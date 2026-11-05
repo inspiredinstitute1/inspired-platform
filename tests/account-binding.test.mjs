@@ -21,3 +21,14 @@ test('matching account binding keeps optimistic conflicts identity-bound and iso
  const stale=await progressEndpoint(request('PUT',a.userId,body),b,h.env);assert.equal(stale.status,409);assert(!('payload' in await stale.json()));assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,1);
 }finally{h.db.close()}});
 test('account preconditions round-trip opaque IDs through header encoding',async()=>{const h=setup();try{const user={...a,userId:'opaque /ಕನ್ನಡ%'};assert.equal((await progressEndpoint(request('PUT',user.userId),user,h.env)).status,200);}finally{h.db.close()}});
+
+test('malformed draft flags are rejected with 400 instead of crashing the progress endpoint',async()=>{const h=setup();try{
+ const bank=JSON.parse(readFileSync('lib/portal-catalogue.json','utf8'));const t=bank.tests[0];const base={answers:Array(t.questions.length).fill(null),startedAt:Date.now(),index:0};
+ for(const flags of [null,{},'bad',Array(t.questions.length+1).fill(0)]){
+  const payload={...emptyProgress(),drafts:{[t.id]:{...base,flags}}};
+  const r=await progressEndpoint(request('PUT',a.userId,{version:0,payload}),a,h.env);
+  assert.equal(r.status,400);
+  assert.match((await r.json()).error,/Invalid question navigator/);
+ }
+ assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
+}finally{h.db.close()}});
