@@ -6,6 +6,15 @@ import {governanceAuditEndpoint} from '../lib/governance-service.mjs';
 import {operationsEndpoint} from '../lib/operations-service.mjs';
 import {financeApprovalsEndpoint} from '../lib/finance-approval-service.mjs';
 import {filesEndpoint} from '../lib/file-service.mjs';
+import {contentEndpoint} from '../lib/content-service.mjs';
+import {adminEnrolmentEndpoint} from '../lib/enrolment-service.mjs';
+import {adminExamsEndpoint} from '../lib/exam-service.mjs';
+import {adminFacultyEndpoint} from '../lib/faculty-service.mjs';
+import {materialEndpoint} from '../lib/material-service.mjs';
+import {modulesEndpoint} from '../lib/module-service.mjs';
+import {resourceEndpoint} from '../lib/resource-service.mjs';
+import {financeEvidenceEndpoint} from '../lib/finance-evidence-service.mjs';
+
 
 
 const owner={userId:'owner-id',email:'owner@example.org'};
@@ -68,4 +77,22 @@ test('sensitive Admin read-only routes reject write methods before storage acces
 test('finance approvals reject cross-origin writes before storage access',async()=>{
  const res=await financeApprovalsEndpoint(request('/api/admin/finance-approvals','POST',{},'https://evil.example'),owner,env);
  assert.equal(res.status,403);
+});
+
+test('programme, faculty, exams and finance-evidence Admin APIs deny guests and students before database access',async()=>{
+ const endpoints=[
+  ['/api/admin/content',contentEndpoint],
+  ['/api/admin/enrolments',adminEnrolmentEndpoint],
+  ['/api/admin/exams',adminExamsEndpoint],
+  ['/api/admin/faculty',adminFacultyEndpoint],
+  ['/api/admin/materials',materialEndpoint],
+  ['/api/admin/modules',modulesEndpoint],
+  ['/api/admin/resources',resourceEndpoint],
+  ['/api/admin/finance-evidence',financeEvidenceEndpoint]
+ ];
+ for(const [path,endpoint] of endpoints)for(const user of [null,student]){
+  const res=await endpoint(request(path),user,env);
+  assert.equal(res.status,403,path);
+  assert.match(res.headers.get('cache-control')||'',/no-store/,path);
+ }
 });
