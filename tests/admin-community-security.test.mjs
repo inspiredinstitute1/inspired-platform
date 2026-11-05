@@ -111,3 +111,20 @@ test('Admin write endpoints reject cross-origin POST requests without querying t
   assert.equal(res.status,403,path);
  }
 });
+
+test('Admin exam writes require an account-binding header before accessing storage',async()=>{
+ const res=await adminExamsEndpoint(request('/api/admin/exams','POST',{}),owner,env);
+ assert.equal(res.status,428);
+});
+test('Admin exam writes reject a stale account-binding header before accessing storage',async()=>{
+ const req=request('/api/admin/exams','POST',{});
+ req.headers.set('x-portal-account-id',encodeURIComponent('different-user'));
+ const res=await adminExamsEndpoint(req,owner,env);
+ assert.equal(res.status,409);
+});
+test('Admin exam writes reject cross-origin requests with a valid account binding',async()=>{
+ const req=request('/api/admin/exams','POST',{},'https://untrusted.example');
+ req.headers.set('x-portal-account-id',encodeURIComponent(owner.userId));
+ const res=await adminExamsEndpoint(req,owner,env);
+ assert.equal(res.status,403);
+});
