@@ -2,6 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {socialLinksEndpoint} from '../lib/social-links-service.mjs';
 import {communityEndpoint} from '../lib/community-service.mjs';
+import {governanceAuditEndpoint} from '../lib/governance-service.mjs';
+import {operationsEndpoint} from '../lib/operations-service.mjs';
+import {financeApprovalsEndpoint} from '../lib/finance-approval-service.mjs';
+import {filesEndpoint} from '../lib/file-service.mjs';
+
 
 const owner={userId:'owner-id',email:'owner@example.org'};
 const student={userId:'student-id',email:'student@example.org'};
@@ -34,5 +39,33 @@ test('community: reject unsupported group platform before database query',async(
 });
 test('community: reject cross-origin writes',async()=>{
  const res=await communityEndpoint(request('/api/admin/community','POST',{action:'createGroup',title:'Group',platform:'telegram',programme:'English',accessTier:'free'},'https://example.net'),owner,env);
+ assert.equal(res.status,403);
+});
+
+test('sensitive Admin endpoints reject guests and students before touching storage',async()=>{
+ const endpoints=[
+  ['/api/admin/governance-audit',governanceAuditEndpoint],
+  ['/api/admin/operations',operationsEndpoint],
+  ['/api/admin/finance-approvals',financeApprovalsEndpoint],
+  ['/api/admin/files/download',(req,user,e)=>filesEndpoint(req,user,e,{admin:true})]
+ ];
+ for(const [path,endpoint] of endpoints)for(const user of [null,student]){
+  const res=await endpoint(request(path),user,env);
+  assert.equal(res.status,403,path);
+  assert.match(res.headers.get('cache-control')||'',/no-store/,path);
+ }
+});
+test('sensitive Admin read-only routes reject write methods before storage access',async()=>{
+ for(const [path,endpoint] of [
+  ['/api/admin/governance-audit',governanceAuditEndpoint],
+  ['/api/admin/operations',operationsEndpoint],
+  ['/api/admin/files/download',(req,user,e)=>filesEndpoint(req,user,e,{admin:true})]
+ ])for(const method of ['POST','DELETE']){
+  const res=await endpoint(request(path,method,{}),owner,env);
+  assert.equal(res.status,405,path+' '+method);
+ }
+});
+test('finance approvals reject cross-origin writes before storage access',async()=>{
+ const res=await financeApprovalsEndpoint(request('/api/admin/finance-approvals','POST',{},'https://evil.example'),owner,env);
  assert.equal(res.status,403);
 });
