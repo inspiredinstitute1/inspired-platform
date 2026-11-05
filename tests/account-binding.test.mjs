@@ -46,7 +46,7 @@ test('null nested progress records are rejected with client errors and no databa
  const bank=JSON.parse(readFileSync('lib/portal-catalogue.json','utf8'));const t=bank.tests[0];
  const cases=[
   [{...emptyProgress(),profile:'not-a-profile'},400],
-  [{...emptyProgress(),customNotes:[null]},400],
+  [{...emptyProgress(),customNotes:[null]},403],
   [{...emptyProgress(),attempts:[null]},400],
   [{...emptyProgress(),drafts:{[t.id]:null}},400]
  ];
