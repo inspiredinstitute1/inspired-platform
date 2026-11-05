@@ -1,0 +1,43 @@
+name: InspirED V3 draft validation
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - development/inspired-3-modular-platform-2026-10-19
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.19.0'
+          cache: pnpm
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Prepare portal catalogue
+        run: node scripts/prepare-portal.mjs
+      - name: Account binding and validation regressions
+        run: node --test tests/account-binding.test.mjs
+      - name: Full test suite
+        run: pnpm run test:all
+      - name: TypeScript
+        run: pnpm run typecheck
+      - name: Lint
+        run: pnpm run lint
+      - name: Production build
+        run: pnpm run build
+
+# This workflow has no deployment, migrations, credentials or production access.
