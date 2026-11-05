@@ -96,3 +96,18 @@ test('programme, faculty, exams and finance-evidence Admin APIs deny guests and 
   assert.match(res.headers.get('cache-control')||'',/no-store/,path);
  }
 });
+
+test('Admin write endpoints reject cross-origin POST requests without querying the database',async()=>{
+ const endpoints=[
+  ['/api/admin/content',contentEndpoint],
+  ['/api/admin/enrolments',adminEnrolmentEndpoint],
+  ['/api/admin/faculty',adminFacultyEndpoint],
+  ['/api/admin/materials',materialEndpoint],
+  ['/api/admin/modules',modulesEndpoint],
+  ['/api/admin/finance-evidence',financeEvidenceEndpoint]
+ ];
+ for(const [path,endpoint] of endpoints){
+  const res=await endpoint(request(path,'POST',{},'https://untrusted.example'),owner,env);
+  assert.equal(res.status,403,path);
+ }
+});
