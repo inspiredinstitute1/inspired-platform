@@ -128,3 +128,10 @@ test('Admin exam writes reject cross-origin requests with a valid account bindin
  const res=await adminExamsEndpoint(req,owner,env);
  assert.equal(res.status,403);
 });
+
+test('Admin resource writes reject cross-origin and unsupported methods before catalogue reads',async()=>{
+ const badOrigin=await resourceEndpoint(request('/api/admin/resources','POST',{},'https://untrusted.example'),owner,env);
+ assert.equal(badOrigin.status,403);
+ const unsupported=await resourceEndpoint(request('/api/admin/resources','DELETE'),owner,env);
+ assert.equal(unsupported.status,405);
+});
