@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import {progressEndpoint,emptyProgress} from '../lib/progress-service.mjs';
+import {progressEndpoint,adminEndpoint,emptyProgress} from '../lib/progress-service.mjs';
 const a={userId:'synthetic-a',email:'a@example.test'},b={userId:'synthetic-b',email:'b@example.test'};
 function setup(){const db=new DatabaseSync(':memory:');db.exec(readFileSync('drizzle/0000_far_dust.sql','utf8'));const DB={prepare(sql){const statement=db.prepare(sql);return{bind(...values){return{async first(){return statement.get(...values)||null;}}}}}};return{db,env:{DB,PORTAL_ADMIN_EMAIL:'owner@example.test'}};}
 function request(method='GET',id=a.userId,body={version:0,payload:emptyProgress()}){return new Request('https://local.test/api/progress',{method,headers:{origin:'https://local.test','content-type':'application/json',...(id===null?{}:{'x-portal-account-id':encodeURIComponent(id)})},...(method==='GET'?{}:{body:JSON.stringify(body)})});}
@@ -56,3 +56,19 @@ test('null nested progress records are rejected with client errors and no databa
   assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
  }
 }finally{h.db.close()}});
+
+test('admin learning analytics deny signed-out and student users before any database access',async()=>{
+ let queries=0;const env={PORTAL_ADMIN_EMAIL:'owner@example.test',DB:{prepare(){queries++;throw Error('Forbidden database access')}}};
+ for(const [user,status] of [[null,401],[a,403],[{...a,email:'OWNER-LOOKALIKE@example.test'},403]]){
+  const r=await adminEndpoint(request('GET'),user,env);
+  assert.equal(r.status,status);
+  assert(!('learners' in await r.json()));
+ }
+ assert.equal(queries,0);
+});
+test('admin learning analytics fail closed when owner configuration is absent',async()=>{
+ let queries=0;const env={DB:{prepare(){queries++;throw Error('Forbidden database access')}}};
+ const r=await adminEndpoint(request('GET'),{userId:'owner',email:'owner@example.test'},env);
+ assert.equal(r.status,403);
+ assert.equal(queries,0);
+});
