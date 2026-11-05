@@ -32,3 +32,12 @@ test('malformed draft flags are rejected with 400 instead of crashing the progre
  }
  assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
 }finally{h.db.close()}});
+
+test('malformed activity maps return 400 without storing learner progress',async()=>{const h=setup();try{
+ for(const activity of ['bad',42,true,[]]){
+  const r=await progressEndpoint(request('PUT',a.userId,{version:0,payload:{...emptyProgress(),activity}}),a,h.env);
+  assert.equal(r.status,400);
+  assert.match((await r.json()).error,/Invalid learning activity/);
+ }
+ assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM learner_progress').get().n,0);
+}finally{h.db.close()}});
