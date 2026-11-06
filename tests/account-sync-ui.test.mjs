@@ -59,3 +59,26 @@ test('boot records expired sessions before parsing an HTML or empty response',as
  assert(h.window.__PORTAL_BOOT__.accountBlocked);assert.equal(h.window.__PORTAL_BOOT__.remote,null);
  assert.equal(h.window.__PORTAL_BOOT__.cache.payload.goal,6);
 });
+
+test('blocked sessions stop subsequent exam and analytics requests before network access',async()=>{
+ let calls=0;const {h,timers}=harness(async()=>{calls++;return response(200,{papers:[]});});
+ h.cloud.blocked=true;h.state.saved=['homophones-100'];
+ for(const [url,options] of [
+  ['/api/exams',{}],
+  ['/api/exams',{method:'POST',body:JSON.stringify({action:'save',attemptId:'synthetic'})}],
+  ['/api/exams/analytics',{}],
+  ['/api/admin/learning',{}]
+ ])await assert.rejects(h.accountFetch(url,options),/Account session changed/);
+ assert.equal(calls,0);assert.equal(timers.size,0);
+ assert.deepEqual(plain(h.state.saved),['homophones-100']);
+});
+
+test('session expiry in an exam request immediately shows refresh guidance and suppresses later calls',async()=>{
+ let calls=0;const {h,timers}=harness(async()=>{calls++;return{status:401,json:async()=>{throw Error('Not JSON')}};});
+ const status={};h.$=()=>status;h.esc=String;h.icon=()=>'';
+ h.cloud.pending=false;h.updateCloudStatus();assert.match(status.innerHTML,/Saved to your account/);
+ await assert.rejects(h.accountFetch('/api/exams'),/Account session changed/);
+ assert.match(status.innerHTML,/Refresh account/);assert(!status.innerHTML.includes('Try again'));
+ await assert.rejects(h.accountFetch('/api/exams/analytics'),/Account session changed/);
+ assert.equal(calls,1);assert.equal(timers.size,0);
+});
