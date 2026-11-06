@@ -27,3 +27,7 @@ Anonymous boot reads guest storage and does not request account progress. Intent
 Sixteen new service/UI regression entries cover pre-database rejection, required write binding, unauthorized access, forged body identity, normal version conflicts, opaque ID encoding, request headers, changed sessions/roles, malformed/failed responses, edit/save races, body-read timeout, boot isolation, refresh status and guest-only boot. UI tests execute source in a VM harness; they are not real-browser tests.
 
 The built Worker/local D1 smoke sends trusted synthetic identity headers to simulate an old tab after a session switch. Mismatched GET/PUT returns no progress, missing write binding requires refresh and both account rows retain their prior versions. This validates application logic only. Real provider sign-in, gateway header sanitization, account switching in browsers, two-device sessions and mobile layout remain unverified. No hosted actions or real accounts were changed.
+
+## 6 November 2026 — expired sessions with non-JSON responses
+
+Boot and subsequent account requests inspect HTTP 401 before consuming JSON. An HTML or empty expired-session response therefore pauses sync and retains the original account cache, even when JSON parsing fails. Regression tests cover initial boot, pull/save paths and suppressed retries; they do not establish live provider behavior. See PR3_PHASE2_CHECKPOINT_2026_11_06.md for current hosting-access blockers.

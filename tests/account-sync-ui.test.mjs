@@ -40,3 +40,22 @@ test('network timeout remains active until the JSON response body finishes',asyn
 test('boot rejects changed-account data before selecting reconciliation state',async()=>{const storage=new Map([['inspired-account:'+user.id,JSON.stringify({payload:{...defaults(),goal:6},pending:true})]]);let expected;const h=vm.createContext({URLSearchParams,AbortController,encodeURIComponent,document:{getElementById:()=>({textContent:JSON.stringify(user)})},window:{location:{search:'',pathname:'/',hash:''},history:{}},localStorage:{getItem:k=>storage.get(k)},setTimeout:()=>1,clearTimeout:()=>{},fetch:async(url,options)=>{if(url==='/api/progress'){expected=options.headers['x-portal-account-id'];return response(200,envelope({...defaults(),goal:7},8,{...user,id:'synthetic-b'}));}return response(200,{modules:[]});}});await vm.runInContext('(async()=>{'+contract+'\n'+boot+'})()',h);const result=h.window.__PORTAL_BOOT__;assert.equal(expected,user.id);assert(result.accountBlocked);assert.equal(result.remote,null);assert.equal(result.cache.payload.goal,6);assert.equal(result.storageKey,'inspired-account:'+user.id);});
 test('blocked sync offers refresh, suppresses retry and schedules no new save',()=>{const {h,timers}=harness(async()=>{throw Error('No request expected')});const el={};h.$=()=>el;h.esc=String;h.icon=()=>'';h.cloud.blocked=true;h.cloud.error=true;h.updateCloudStatus();assert.match(el.innerHTML,/href="\/">Refresh account/);assert(!el.innerHTML.includes('Try again'));h.queueCloudSave();assert.equal(timers.size,0);});
 test('anonymous boot reads only guest state and never fetches account progress',async()=>{const keys=[],urls=[];const h=vm.createContext({URLSearchParams,AbortController,document:{getElementById:()=>({textContent:'null'})},window:{location:{search:'',pathname:'/',hash:''},history:{}},localStorage:{getItem:key=>{keys.push(key);return null}},setTimeout:()=>1,clearTimeout:()=>{},fetch:async url=>{urls.push(url);return response(200,{modules:[]});}});await vm.runInContext('(async()=>{'+contract+'\n'+boot+'})()',h);assert.deepEqual(keys,['inspired-guest-v2']);assert.deepEqual(urls,['/api/modules']);assert.equal(h.window.__PORTAL_BOOT__.user,null);assert.equal(h.window.__PORTAL_BOOT__.remote,null);});
+
+test('non-JSON expired-session responses pause sync and retain account progress',async()=>{
+ for(const pull of [false,true]){
+  let calls=0;const {h,storage,timers}=harness(async()=>{calls++;return{ok:false,status:401,json:async()=>{throw new SyntaxError('HTML sign-in response')}};});
+  h.state.saved=['homophones-100'];await h.syncProgress(pull);
+  assert(h.cloud.blocked);assert(h.cloud.pending);assert(!h.cloud.saving);
+  assert.deepEqual(plain(h.state.saved),['homophones-100']);
+  assert.equal(JSON.parse(storage.get('inspired-account:'+user.id)).payload.saved[0],'homophones-100');
+  await h.syncProgress(true);h.queueCloudSave();assert.equal(calls,1);assert.equal(timers.size,0);
+ }
+});
+
+test('boot records expired sessions before parsing an HTML or empty response',async()=>{
+ const cached={payload:{...defaults(),goal:6},pending:true};
+ const h=vm.createContext({URLSearchParams,AbortController,encodeURIComponent,document:{getElementById:()=>({textContent:JSON.stringify(user)})},window:{location:{search:'',pathname:'/',hash:''},history:{}},localStorage:{getItem:()=>JSON.stringify(cached)},setTimeout:()=>1,clearTimeout:()=>{},fetch:async url=>url==='/api/progress'?{ok:false,status:401,json:async()=>{throw new SyntaxError('Not JSON')}}:response(200,{modules:[]})});
+ await vm.runInContext('(async()=>{'+contract+'\n'+boot+'})()',h);
+ assert(h.window.__PORTAL_BOOT__.accountBlocked);assert.equal(h.window.__PORTAL_BOOT__.remote,null);
+ assert.equal(h.window.__PORTAL_BOOT__.cache.payload.goal,6);
+});
