@@ -1,0 +1,137 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {socialLinksEndpoint} from '../lib/social-links-service.mjs';
+import {communityEndpoint} from '../lib/community-service.mjs';
+import {governanceAuditEndpoint} from '../lib/governance-service.mjs';
+import {operationsEndpoint} from '../lib/operations-service.mjs';
+import {financeApprovalsEndpoint} from '../lib/finance-approval-service.mjs';
+import {filesEndpoint} from '../lib/file-service.mjs';
+import {contentEndpoint} from '../lib/content-service.mjs';
+import {adminEnrolmentEndpoint} from '../lib/enrolment-service.mjs';
+import {adminExamsEndpoint} from '../lib/exam-service.mjs';
+import {adminFacultyEndpoint} from '../lib/faculty-service.mjs';
+import {materialEndpoint} from '../lib/material-service.mjs';
+import {modulesEndpoint} from '../lib/module-service.mjs';
+import {resourceEndpoint} from '../lib/resource-service.mjs';
+import {financeEvidenceEndpoint} from '../lib/finance-evidence-service.mjs';
+
+
+
+const owner={userId:'owner-id',email:'owner@example.org'};
+const student={userId:'student-id',email:'student@example.org'};
+const env={PORTAL_ADMIN_EMAIL:'owner@example.org',DB:{prepare(){throw Error('Database should not be queried during validation tests');}}};
+const request=(path,method='GET',body,origin='https://inspiredinstitute.in')=>new Request('https://inspiredinstitute.in'+path,{method,headers:body===undefined?{}:{origin,'content-type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});
+
+test('social links: block unauthenticated and student access',async()=>{
+ for(const user of [null,student]){const res=await socialLinksEndpoint(request('/api/admin/social-links'),user,env);assert.equal(res.status,403);}
+});
+test('community: block unauthenticated and student access',async()=>{
+ for(const user of [null,student]){const res=await communityEndpoint(request('/api/admin/community'),user,env);assert.equal(res.status,403);}
+});
+test('social links: reject cross-origin writes',async()=>{
+ const res=await socialLinksEndpoint(request('/api/admin/social-links','POST',{platform:'youtube',label:'Channel',url:'https://youtube.com/example',enabled:false,sortOrder:1},'https://example.net'),owner,env);
+ assert.equal(res.status,403);
+});
+test('social links: reject untrusted URL schemes and malformed data',async()=>{
+ const base={platform:'youtube',label:'Channel',url:'https://youtube.com/example',enabled:false,sortOrder:1};
+ for(const item of [{...base,url:'javascript:alert(1)'},{...base,url:'http://example.org'},{...base,sortOrder:-1},{...base,enabled:'yes'},{...base,url:'https://user:secret@example.org'}]){
+  const res=await socialLinksEndpoint(request('/api/admin/social-links','POST',item),owner,env);assert.equal(res.status,400);
+ }
+});
+test('community: reject unknown membership status before database query',async()=>{
+ const res=await communityEndpoint(request('/api/admin/community','POST',{action:'upsertMembership',groupId:1,learnerId:'123',membershipStatus:'administrator',paymentStatus:'paid_active'}),owner,env);
+ assert.equal(res.status,400);
+});
+test('community: reject unsupported group platform before database query',async()=>{
+ const res=await communityEndpoint(request('/api/admin/community','POST',{action:'createGroup',title:'Test',platform:'unknown',programme:'English',accessTier:'free'}),owner,env);
+ assert.equal(res.status,400);
+});
+test('community: reject cross-origin writes',async()=>{
+ const res=await communityEndpoint(request('/api/admin/community','POST',{action:'createGroup',title:'Group',platform:'telegram',programme:'English',accessTier:'free'},'https://example.net'),owner,env);
+ assert.equal(res.status,403);
+});
+
+test('sensitive Admin endpoints reject guests and students before touching storage',async()=>{
+ const endpoints=[
+  ['/api/admin/governance-audit',governanceAuditEndpoint],
+  ['/api/admin/operations',operationsEndpoint],
+  ['/api/admin/finance-approvals',financeApprovalsEndpoint],
+  ['/api/admin/files/download',(req,user,e)=>filesEndpoint(req,user,e,{admin:true})]
+ ];
+ for(const [path,endpoint] of endpoints)for(const user of [null,student]){
+  const res=await endpoint(request(path),user,env);
+  assert.equal(res.status,403,path);
+  assert.match(res.headers.get('cache-control')||'',/no-store/,path);
+ }
+});
+test('sensitive Admin read-only routes reject write methods before storage access',async()=>{
+ for(const [path,endpoint] of [
+  ['/api/admin/governance-audit',governanceAuditEndpoint],
+  ['/api/admin/operations',operationsEndpoint],
+  ['/api/admin/files/download',(req,user,e)=>filesEndpoint(req,user,e,{admin:true})]
+ ])for(const method of ['POST','DELETE']){
+  const res=await endpoint(request(path,method,{}),owner,env);
+  assert.equal(res.status,405,path+' '+method);
+ }
+});
+test('finance approvals reject cross-origin writes before storage access',async()=>{
+ const res=await financeApprovalsEndpoint(request('/api/admin/finance-approvals','POST',{},'https://evil.example'),owner,env);
+ assert.equal(res.status,403);
+});
+
+test('programme, faculty, exams and finance-evidence Admin APIs deny guests and students before database access',async()=>{
+ const endpoints=[
+  ['/api/admin/content',contentEndpoint],
+  ['/api/admin/enrolments',adminEnrolmentEndpoint],
+  ['/api/admin/exams',adminExamsEndpoint],
+  ['/api/admin/faculty',adminFacultyEndpoint],
+  ['/api/admin/materials',materialEndpoint],
+  ['/api/admin/modules',modulesEndpoint],
+  ['/api/admin/resources',resourceEndpoint],
+  ['/api/admin/finance-evidence',financeEvidenceEndpoint]
+ ];
+ for(const [path,endpoint] of endpoints)for(const user of [null,student]){
+  const res=await endpoint(request(path),user,env);
+  assert.equal(res.status,403,path);
+  assert.match(res.headers.get('cache-control')||'',/no-store/,path);
+ }
+});
+
+test('Admin write endpoints reject cross-origin POST requests without querying the database',async()=>{
+ const endpoints=[
+  ['/api/admin/content',contentEndpoint],
+  ['/api/admin/enrolments',adminEnrolmentEndpoint],
+  ['/api/admin/faculty',adminFacultyEndpoint],
+  ['/api/admin/materials',materialEndpoint],
+  ['/api/admin/modules',modulesEndpoint],
+  ['/api/admin/finance-evidence',financeEvidenceEndpoint]
+ ];
+ for(const [path,endpoint] of endpoints){
+  const res=await endpoint(request(path,'POST',{},'https://untrusted.example'),owner,env);
+  assert.equal(res.status,403,path);
+ }
+});
+
+test('Admin exam writes require an account-binding header before accessing storage',async()=>{
+ const res=await adminExamsEndpoint(request('/api/admin/exams','POST',{}),owner,env);
+ assert.equal(res.status,428);
+});
+test('Admin exam writes reject a stale account-binding header before accessing storage',async()=>{
+ const req=request('/api/admin/exams','POST',{});
+ req.headers.set('x-portal-account-id',encodeURIComponent('different-user'));
+ const res=await adminExamsEndpoint(req,owner,env);
+ assert.equal(res.status,409);
+});
+test('Admin exam writes reject cross-origin requests with a valid account binding',async()=>{
+ const req=request('/api/admin/exams','POST',{},'https://untrusted.example');
+ req.headers.set('x-portal-account-id',encodeURIComponent(owner.userId));
+ const res=await adminExamsEndpoint(req,owner,env);
+ assert.equal(res.status,403);
+});
+
+test('Admin resource writes reject cross-origin and unsupported methods before catalogue reads',async()=>{
+ const badOrigin=await resourceEndpoint(request('/api/admin/resources','POST',{},'https://untrusted.example'),owner,env);
+ assert.equal(badOrigin.status,403);
+ const unsupported=await resourceEndpoint(request('/api/admin/resources','DELETE'),owner,env);
+ assert.equal(unsupported.status,405);
+});

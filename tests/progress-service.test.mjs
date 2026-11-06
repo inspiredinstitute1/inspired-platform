@@ -6,7 +6,7 @@ const db=new DatabaseSync(':memory:');db.exec(fs.readFileSync('drizzle/0000_far_
 const DB={prepare(sql){return{bind(...values){return{async first(){return db.prepare(sql).get(...values)||null;}};},async all(){return{results:db.prepare(sql).all()};}};}};
 const env={DB,PORTAL_ADMIN_EMAIL:'owner@example.test'},owner={userId:'owner',email:'owner@example.test',displayName:'Owner'},a={userId:'a',email:'a@example.test',displayName:'Ananya'},b={userId:'b',email:'b@example.test',displayName:'Bhavana'};
 const request=(method='GET',body,origin='https://portal.test')=>new Request('https://portal.test/api/progress',{method,headers:{Origin:origin,'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
-async function put(user,payload,version=0,origin){return progressEndpoint(request('PUT',{payload,version},origin),user,env);}
+async function put(user,payload,version=0,origin){const r=request('PUT',{payload,version},origin);r.headers.set('x-portal-account-id',encodeURIComponent(user.userId));return progressEndpoint(r,user,env);}
 async function data(r){return r.json();}
 assert.equal((await progressEndpoint(request(),null,env)).status,401);
 assert.equal((await adminEndpoint(request(),a,env)).status,403);

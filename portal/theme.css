@@ -181,7 +181,7 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
  :root{font-size:18px;scroll-padding-bottom:100px}
  body{line-height:1.7;-webkit-text-size-adjust:100%;text-size-adjust:100%}
  .app-shell{padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))}
- .mobile-bottom-nav{position:fixed;inset:auto 0 0;z-index:35;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));background:var(--sidebar-glass);border-top:1px solid var(--accent-line);box-shadow:0 -8px 28px rgba(0,0,0,.14),inset 0 1px 0 var(--glass-edge);-webkit-backdrop-filter:blur(24px) saturate(125%);backdrop-filter:blur(24px) saturate(125%)}
+ .mobile-bottom-nav{position:fixed;inset:auto 0 0;z-index:35;display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:8px 6px calc(8px + env(safe-area-inset-bottom,0px));background:var(--sidebar-glass);border-top:1px solid var(--accent-line);box-shadow:0 -8px 28px rgba(0,0,0,.14),inset 0 1px 0 var(--glass-edge);-webkit-backdrop-filter:blur(24px) saturate(125%);backdrop-filter:blur(24px) saturate(125%)}
  .mobile-nav-item{min-width:0;min-height:60px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;padding:7px 2px;border:1px solid transparent;border-radius:12px;font-size:12px;font-weight:650;line-height:1.25;color:var(--muted);white-space:nowrap}
  .mobile-nav-item .icon{width:23px;height:23px;stroke-width:1.85}
  .mobile-nav-item.active{color:var(--gold);background:var(--accent-wash);border-color:var(--accent-line);box-shadow:inset 0 1px 0 var(--glass-edge)}
@@ -320,3 +320,52 @@ dialog{color:var(--text);box-shadow:0 30px 100px rgba(0,0,0,.28),inset 0 1px 0 v
 @media(max-width:360px){.source-quiz .question-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.theme-toggle{padding-left:8px;padding-right:8px}.hero{padding-left:18px;padding-right:18px}}
 @media(prefers-reduced-transparency:reduce){.mobile-bottom-nav{background:var(--fallback);-webkit-backdrop-filter:none;backdrop-filter:none}}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.mobile-bottom-nav{background:var(--fallback)}}
+
+/* Admin controls share the portal's mobile typography and theme tokens. */
+.admin-manager,.admin-manager form,.admin-manager .split-columns>*{min-width:0}
+.admin-manager .form-field{min-width:0;font-size:16px;line-height:1.6}
+.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{box-sizing:border-box;width:100%;min-width:0;max-width:100%;font:inherit;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);min-height:48px}
+.admin-manager textarea{resize:vertical}
+.admin-manager .notice,.admin-manager [role="status"]{overflow-wrap:anywhere}
+.admin-manager .button{min-height:48px;white-space:normal;overflow-wrap:anywhere}
+.admin-checkbox-row{display:flex;align-items:center;gap:12px;min-height:48px;margin:18px 0;font-size:16px;line-height:1.6}
+.admin-checkbox-row input{width:22px;height:22px;flex:0 0 auto;accent-color:var(--gold)}
+.admin-manager :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.admin-manager button:disabled{opacity:.6;cursor:wait}
+.programme-discovery[hidden]{display:none!important}
+.programme-discovery{margin-top:24px;overflow-wrap:anywhere}
+.programme-tree,.programme-tree ul{list-style:none;padding-left:0}
+.programme-tree ul{padding-left:16px;border-left:1px solid var(--line)}
+.programme-tree li{margin:16px 0;min-width:0;line-height:1.7}
+.programme-tree summary{min-height:48px;cursor:pointer}
+.programme-tree p{color:var(--muted);padding:4px 0;font-size:16px;line-height:1.7}
+.programme-materials .button{white-space:normal;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box;min-height:48px;text-align:left}
+.site-footer{flex-wrap:wrap}
+.public-social-links{display:flex;flex-basis:100%;flex-wrap:wrap;gap:12px;width:100%;margin-bottom:12px}
+.public-social-links[hidden]{display:none!important}
+.public-social-links .button{font-size:16px;line-height:1.6;min-height:48px;white-space:normal;overflow-wrap:anywhere;max-width:100%;box-sizing:border-box;text-align:left}
+@media(max-width:760px){.public-social-links .button{width:100%;font-size:17px}}
+@media(max-width:760px){.programme-materials .button{font-size:17px;line-height:1.6;width:100%}}
+@media(max-width:760px){.admin-manager .form-field,.admin-manager .small,.admin-checkbox-row{font-size:17px;line-height:1.7}.admin-manager .form-field input,.admin-manager .form-field select,.admin-manager .form-field textarea{font-size:18px;min-height:50px}.admin-manager .hero-actions{align-items:stretch}.admin-manager .button{font-size:16px;line-height:1.5;max-width:100%}}
+
+.authored-note-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:1.125rem;line-height:1.8;margin-top:24px}
+
+/* One question at a time keeps long exam papers usable on a phone. */
+.exam-question[hidden]{display:none!important}
+.exam-question{min-width:0;margin:24px 0;padding:18px;border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}
+.exam-question legend{padding:0 8px;font-weight:700}
+.exam-question label{min-height:48px;cursor:pointer;line-height:1.6}
+.exam-question input{width:20px;height:20px;accent-color:var(--gold)}
+.exam-status-bar{padding:14px;background:var(--field);border:1px solid var(--line);border-radius:12px}
+#exam-clock{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+#exam-save-message{font-size:16px;line-height:1.6}
+.exam-question-nav{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0;max-height:180px;overflow-y:auto;padding:4px}
+.exam-jump{min-width:44px;min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--field);color:var(--text);cursor:pointer;font-size:16px}
+.exam-jump.answered{border-color:var(--gold);color:var(--gold)}
+.exam-jump[aria-current]{outline:2px solid var(--gold);outline-offset:2px}
+.exam-actions{display:flex;flex-wrap:wrap;gap:12px}
+#timed-exam :focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+@media(max-width:760px){.exam-question{padding:12px}.exam-actions .button{flex:1 1 120px;white-space:normal;min-height:48px}#timed-exam h1{font-size:26px}.exam-question p,.exam-question label{font-size:18px}}
+
+/* Keep account and Admin links reachable on shorter desktop screens. */
+.sidebar{overflow-y:auto;overscroll-behavior:contain}
