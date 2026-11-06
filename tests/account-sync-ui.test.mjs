@@ -82,3 +82,36 @@ test('session expiry in an exam request immediately shows refresh guidance and s
  await assert.rejects(h.accountFetch('/api/exams/analytics'),/Account session changed/);
  assert.equal(calls,1);assert.equal(timers.size,0);
 });
+
+test('returning to the browser synchronizes progress without discarding an active mock answer or save',async()=>{
+ for(const pending of [false,true]){
+  const {h}=harness(async()=>response(200,envelope()));
+  const events={},message={},clock={},box={isConnected:true,innerHTML:'',querySelector:selector=>selector==='#exam-save-message'?message:clock,querySelectorAll:()=>[]};
+  let syncs=0,renders=0;
+  h.window={addEventListener:(name,fn)=>events[name]=fn};
+  h.document={addEventListener(){},getElementById:()=>box,querySelector:()=>null};
+  h.performance={now:()=>0};h.setInterval=()=>1;h.clearInterval=()=>{};h.esc=String;h.link=()=>'';
+  vm.runInContext(readFileSync('portal/exams.js','utf8'),h);
+  h.accountFetch=async()=>response(200,{paper:{title:'Synthetic mock'},attempt:{id:'attempt',status:'active',version:1,answers:[null],deadline:61000},questions:[{question:'Synthetic?',options:['A','B','C','D']}],serverNow:1000,result:null});
+  await h.loadTimedExam('attempt');
+  vm.runInContext('examSession.answers=[3];examSession.generation=1;',h);
+  vm.runInContext('examSession',h).pending=pending;
+  const session=vm.runInContext('examSession',h);
+  h.route=()=>'exam/attempt';h.syncProgress=async()=>{syncs++};
+  h.render=()=>{renders++;h.stopExam();};h.cloud.pending=false;h.cloud.loaded=true;
+  h.initCloud();await events.focus();
+  assert.equal(syncs,1);assert.equal(renders,0);
+  assert.equal(vm.runInContext('examSession',h),session);
+  assert.equal(session.answers[0],3);assert.equal(session.generation,1);assert.equal(session.pending,pending);
+ }
+});
+
+test('focus refresh preserves open note/PDF readers but still refreshes the notes catalogue',async()=>{
+ for(const route of ['notes/homophones-100','notes/active-passive','material/authored-example','pdf/pdf-example','notes']){
+  const {h}=harness(async()=>response(200,envelope()));const events={};let syncs=0,renders=0;
+  h.window={addEventListener:(name,fn)=>events[name]=fn};h.document={querySelector:()=>null};h.route=()=>route;
+  h.syncProgress=async()=>{syncs++};h.render=()=>{renders++};h.cloud.pending=false;h.cloud.loaded=true;
+  h.initCloud();await events.focus();
+  assert.equal(syncs,1,route);assert.equal(renders,route==='notes'?1:0,route);
+ }
+});

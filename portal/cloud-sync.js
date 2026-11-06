@@ -50,7 +50,8 @@ function initCloud(){
  updateCloudStatus();
  if(!cloud.user)return;
  window.addEventListener('online',()=>syncProgress(true));
- window.addEventListener('focus',async()=>{const routeBefore=route();await syncProgress(true);if(route()===routeBefore&&!document.querySelector('#main form'))render(true);});
+ // Account refresh must not rebuild an open reader or discard a timed mock's in-memory answers.
+ window.addEventListener('focus',async()=>{const routeBefore=route();await syncProgress(true);if(route()===routeBefore&&!/^(?:exam|material|pdf|notes)\//.test(routeBefore)&&!document.querySelector('#main form'))render(true);});
  if(cloud.pending||!cloud.loaded)cloud.timer=setTimeout(()=>syncProgress(),800);
 }
 async function loadAdminLearning(){
